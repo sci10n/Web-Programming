@@ -1,0 +1,102 @@
+body{
+		background-color: lightblue;
+
+}
+input{
+	float:right;
+}
+select{
+	float:right;
+	width:142px;
+}
+button{
+	float:right;
+}
+textarea{
+	width: 388px;
+   resize: vertical;
+   border: 1px solid;
+}
+.message_board{
+
+	height: 250px;
+	resize:none;
+}
+.column{
+	background-color: lightgray;
+	float:left;
+	height: inherit;
+	margin-right: 5px;
+	min-width: 200px;
+	border-right: 1px solid;
+}
+.content{
+	width: 600px;
+	height: 400px;
+	margin-top: 100px;
+	margin-left: auto;
+	margin-right: auto;
+}
+.row{
+	width: inherit;
+	margin-top: 10px;
+	min-height: 10px;
+}
+.inner{
+	width: inherit;
+	margin-left: auto;
+	margin-right: auto;
+}
+.tab{
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+	line-height:50px;
+	float: left;
+	width: 100px;
+	height: 50px;
+	background-color: yellow;
+	border: 1px solid;
+	padding-left: 5px;
+}
+.tab:hover{
+	background-color: green;
+}
+.panel{
+	border: 1px solid;
+	float:left;
+	width: inherit;
+	height: 350px;
+	background-color: gray;
+
+}
+#welcomeimage{
+	width: inherit;
+	height: inherit;
+}
+#logo{
+	float:left;
+	width: 338px;
+	height:inherit;
+	border: 1px solid;
+}
+#login{
+	margin-bottom: 10px;
+	float:right;
+	background-color: gray;
+	width: 248px;
+	height:88px;	
+	border: 1px solid;
+}
+#signup{
+	float:right;
+	background-color: gray;
+	width: 248px;
+	height:300px;	
+	border: 1px solid;
+}
+
+@keyframes fadeload {
+    from {opacity: 0  }
+    to {opacity: 1 }
+}
