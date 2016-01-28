@@ -2,6 +2,7 @@ body {
     background-color: lightblue;
 }
 input {
+	width: auto;
     float: right;
 }
 select {
@@ -10,23 +11,26 @@ select {
 }
 button {
     float: right;
+    min-height: 10px;
+    height: 20px;
 }
-textarea {
-    width: 388px;
-    resize: vertical;
-    border: 1px solid;
+form {
+	margin-left: 5px;
+	margin-right: 5px;
+	max-height: 90%
 }
 .message_board {
-    height: 250px;
+	width:100%;
+	height:80%;
+	max-height: 90%;
     resize: none;
 }
-.column {
-    background-color: lightgray;
-    float: left;
-    height: inherit;
-    margin-right: 5px;
-    min-width: 200px;
-    border-right: 1px solid;
+.post_field{
+	resize:none;
+	height:10%;
+	width: 100%;
+	max-height: 10%;
+
 }
 .content {
     width: 600px;
@@ -37,35 +41,51 @@ textarea {
 }
 .row {
     width: inherit;
-    margin-top: 10px;
-    min-height: 10px;
+    height:auto;
+    padding-top: 2px;
+    min-height: 20px;
+    padding-bottom: 2px;
 }
 .inner {
     width: inherit;
-    margin-left: auto;
-    margin-right: auto;
+    padding-left: auto;
+    padding-right: auto;
+    height:auto;
 }
 .tab {
     margin-left: auto;
     margin-right: auto;
     text-align: center;
-    line-height: 50px;
+    line-height: 30px;
     float: left;
     width: 100px;
-    height: 50px;
-    background-color: yellow;
+    height: 30px;
+    background-color: lightgray;
     border: 1px solid;
-    padding-left: 5px;
+    padding-left: 2px;
 }
 .tab:hover {
-    background-color: green;
+    background-color: gray;
 }
+#userinfo{
+	display: inline-block;
+	width:200px;
+	float left;
+	max-height: 100%
+}
+#messages{
+	display: inline-block;
+	width: 400px;
+	float:left;
+	max-height: 100%;
+}
+
 .panel {
-    border: 1px solid;
     float: left;
     width: inherit;
     height: 350px;
-    background-color: gray;
+    border:1px solid;
+    background-color: lightgray;
 }
 #welcomeimage {
     width: inherit;
@@ -80,14 +100,14 @@ textarea {
 #login {
     margin-bottom: 10px;
     float: right;
-    background-color: gray;
+    background-color: lightgray;
     width: 248px;
     height: 88px;
     border: 1px solid;
 }
 #signup {
     float: right;
-    background-color: gray;
+    background-color: lightgray;
     width: 248px;
     height: 300px;
     border: 1px solid;

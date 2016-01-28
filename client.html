@@ -12,7 +12,7 @@
 				<img id="welcomeimage" src="wimage.png" alt="Welcome">
 			</div>
 			<div id="login">
-				<form method="POST" id="signinform" name="signinform" onsubmit="custom_signin(this); return false">
+				<form method="POST" id="signinform" name="signinform" oninput="this.username.setCustomValidity('')" onsubmit="custom_signin(this); return false">
 					<div class="inner">
 					<div class="row"><label for="username">Username:</label>
 					<input type="email" id="username" name="username" required></div>
@@ -49,7 +49,7 @@
 							<input type="text" id="country" name="country" required></div>
 			
 							<div class="row"><label for="email">Email:</label>
-							<input type="email" id="email" name="email" required></div>
+							<input type="email" id="email" name="email" oninput="this.setCustomValidity('')" required></div>
 			
 							<div class="row"><label for="password">Password:</label>
 							<input type="password" id="password" name="password" oninput="validatePassword(this);" required ></div>
@@ -67,7 +67,7 @@
 				</div>
 		</script>
 		<script type="text/view" id="profileview">
-			<div class="tab" name="tabHome" id="tabHome" onclick="showPanel('home')" >
+			<div class="tab" name="tabHome" id="tabHome" onclick="show_home_panel()" >
 					HOME
 				</div>
 				<div class="tab" name="tabBrowse" id="tabBrowse" onclick="showPanel('browse')">
@@ -77,37 +77,30 @@
 					ACCOUNT
 				</div>
 				<div class="panel" id="homePanel" name="homePanel">
-					<div class="column" name="userinfo" id="userinfo">
-						<div class="inner">
+					<div name="userinfo" id="userinfo">
 						<div class="row"><label name="firstname" id="firstname"></label></div>
 						<div class="row"><label name="lastname" id="lastname"></label></div>
 						<div class="row"><label name="email" id="email"></label></div>
 						<div class="row"><label name="city" id="city"></label></div>
 						<div class="row"><label name="country" id="country"></label></div>
 						<div class="row"><label name="gender" id="gender"></label></div>
-						</div>
 					</div>
-					<div class="column">
-					<div class="inner">
-						<textarea class="message_board" id="message_board_self" name="message_board_self" readonly>
-						</textarea>
+					<div id="messages">
 					<form method="POST" id="postMessageForm" name="postMessageForm" onsubmit="custom_post_message(this); return false">
-						<div class="inner">
-						<div class="row"><textarea id="message" name="message" required></textarea></div>
+						<div class="row"><textarea class="message_board" id="message_board_self" name="message_board_self" readonly></textarea></div>
+						<div class="row"><textarea class="post_field" id="message" name="message" required></textarea></div>
 						<div class="row">
-							<button type="submit" value="button_post_message" id="button_post_message" name="button_post_message">Post Message</button>
-							<button type="button" value="button_refresh" id="button_refresh" name="button_refresh" onclick="get_messages_self(message_board_self)">Refresh</button>
-						</div>
-					</div>
+								<button type="submit" value="button_post_message" id="button_post_message" name="button_post_message">Post Message</button>
+								<button type="button" value="button_refresh" id="button_refresh" name="button_refresh" onclick="get_messages(message_board_self)">Refresh</button>
+						</div>	
 					</form>
-					</div>
 					</div>
 				</div>
 				<div class="panel" id="browsePanel" name="browsePanel">
 					<form method="POST" id="browseUserForm" name="browseUserForm" onsubmit="browse_other_user(this);return false">
 					<div class="inner">
 						<div class="row"><label for="email">Email:</label>
-							<input type="email" id="email" name="email" required ></div>
+							<input type="email" id="email" name="email" oninput="this.setCustomValidity('')" required ></div>
 			
 						<div class="row">
 						<button type="submit" value="button_brwse_user" id="button_brwse_user" name="button_brwse_user">Browse</button></div>
@@ -120,7 +113,7 @@
 						<div class="inner">
 			
 								<div class="row"><label for="oldpassword">Old Password:</label>
-								<input type="password" id="oldpassword" name="oldpassword" oninput="validatePassword(this);" required ></div>
+								<input type="password" id="oldpassword" name="oldpassword" oninput="this.setCustomValidity('')" required ></div>
 			
 								<div class="row"><label for="newpassword">New Password:</label>
 								<input type="password" id="newpassword" name="newpassword" oninput="validatePassword(this);" required ></div>
@@ -129,15 +122,14 @@
 								<input type="password" id="repassword" name="repassword" oninput="matchingPasswords(accountform.newpassword,this);" required></div>
 			
 			
-						<div class="row">
-						<button type="submit" value="button_change_passwd" id="button_change_passwd" name="button_change_passwd">Change Password</button></div>
+								<div class="row"><label for="button_change_passwd"></label>
+								<button type="submit" value="button_change_passwd" id="button_change_passwd" name="button_change_passwd">Change Password</button></div>
+
+								<div class="row"><label for="button_signout"></label>
+								<button type="button" value="button_signout" id="button_signout" name="button_signout" onclick="custom_sign_out()">Sign Out</button></div>
 						</div>
+
 					</form>
-					<div class="inner">
-					<div class="row">
-					<button type="submit" value="button_signout" id="button_signout" name="button_signout" onclick="custom_sign_out()">Sign Out</button>
-					</div>
-					</div>
 				</div>
 		</script>
 		<div class="content" id="content" name="content">

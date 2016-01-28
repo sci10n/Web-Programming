@@ -1,3 +1,4 @@
+
 displayView = function() {
     //the code required to display a view
 };
@@ -5,7 +6,7 @@ displayView = function() {
 validatePassword = function(password) {
     if (password.value.length < 8) {
         password.setCustomValidity("Password must be atleast 8 characters.");
-        password.reportValidity();
+        password.checkValidity();
     } else {
         password.setCustomValidity("");
     }
@@ -13,7 +14,7 @@ validatePassword = function(password) {
 matchingPasswords = function(password, repassword) {
     if (password.value != repassword.value) {
         repassword.setCustomValidity("Passwords must match.");
-        repassword.reportValidity();
+        repassword.checkValidity();
     } else {
         repassword.setCustomValidity("");
     }
@@ -21,12 +22,18 @@ matchingPasswords = function(password, repassword) {
 
 custom_change_passwd = function(form) {
     var result = serverstub.changePassword(localStorage.getItem("user_token"), form.oldpassword.value, form.newpassword.value);
-    window.alert(result.message);
+    if(result.success){
+    	form.oldpassword.setCustomValidity("");
+    	form.reset();
+    }
+    else{
+    	form.oldpassword.setCustomValidity(result.message);
+    }
+    form.oldpassword.checkValidity();
 };
 
 custom_sign_out = function() {
     var result = serverstub.signOut(localStorage.getItem("user_token"));
-    window.alert(result.message);
     if (result.success) {
         changeView("welcome");
     } else {
@@ -36,24 +43,29 @@ custom_sign_out = function() {
 
 custom_signin = function(form) {
     var result = serverstub.signIn(form.username.value, form.password.value);
-    window.alert(result.message + " " + result.data);
     if (result.success) {
         localStorage.setItem("user_token", result.data);
         changeView("profile");
-    } else {
 
+    } else {
+    	form.username.setCustomValidity(result.message);
     }
 };
 
+show_home_panel = function(){
+	var result = serverstub.getUserDataByToken(localStorage.getItem("user_token")).data;
+	localStorage.setItem("post_email", result.email);
+	showPanel("home");
+	get_info(result.email);
+    get_messages(document.getElementById("message_board_self"));
+
+}
 showPanel = function(name) {
     homePanel.style.display = "none";
     browsePanel.style.display = "none";
     accountPanel.style.display = "none";
     if (name === "home") {
         homePanel.style.display = "block";
-        get_info(serverstub.getUserDataByToken(localStorage.getItem("user_token")).data.email);
-        get_messages_self(document.getElementById("message_board_self"));
-
     } else if (name === "browse") {
         browsePanel.style.display = "block";
     } else if (name === "account") {
@@ -73,13 +85,13 @@ custom_signup = function(form) {
         city: form.city.value,
         country: form.country.value
     };
-    window.alert(input.email);
     var result = serverstub.signUp(input);
-    window.alert(result.message);
     if (result.success) {
-
+    	  form.email.setCustomValidity("");
+    	  form.clear();
     } else {
-
+     	form.email.setCustomValidity(result.message);
+     	form.email.checkValidity();
     }
     /*
     if(!result.success){
@@ -89,13 +101,8 @@ custom_signup = function(form) {
     */
 };
 
-get_messages_self = function(message_board) {
-    var result = serverstub.getUserDataByToken(localStorage.getItem("user_token"));
-    get_messages(message_board, result.data.email);
-};
-
-get_messages = function(message_board, email) {
-    var result = serverstub.getUserMessagesByEmail(localStorage.getItem("user_token"), email);
+get_messages = function(message_board) {
+    var result = serverstub.getUserMessagesByEmail(localStorage.getItem("user_token"), localStorage.getItem("post_email"));
     message_board.value = "";
     if (result.success) {
         for (var i = result.data.length - 1; i >= 0; i--) {
@@ -108,27 +115,32 @@ get_info = function(email) {
     var result = serverstub.getUserDataByEmail(localStorage.getItem("user_token"), email).data;
     document.getElementById("firstname").innerHTML = result.firstname;
     document.getElementById("lastname").innerHTML = result.familyname;
-
+    document.getElementById("email").innerHTML = result.email;
+    document.getElementById("city").innerHTML = result.city;
+    document.getElementById("country").innerHTML = result.country;
+    document.getElementById("gender").innerHTML = result.gender;
 
 };
 
 browse_other_user = function(form) {
     var email = form.email.value;
+    localStorage.setItem("post_email", email);
     var result = serverstub.getUserDataByEmail(localStorage.getItem("user_token"), email);
     if (result.success) {
         showPanel("home");
         get_info(email);
-        get_messages(message_board_self, email);
+        get_messages(message_board_self);
+        form.reset();
     } else {
-        window.alert(result.message);
-
+    	form.email.setCustomValidity(result.message);
     }
 };
 
 custom_post_message = function(form) {
-    var result = serverstub.postMessage(localStorage.getItem("user_token"), form.message.value, form.email.value);
+    var result = serverstub.postMessage(localStorage.getItem("user_token"), form.message.value, localStorage.getItem("post_email"));
     if (result.success) {
-
+		get_messages(document.getElementById("message_board_self"));
+		form.reset();
     } else {
 
     }
@@ -140,7 +152,7 @@ changeView = function(name) {
     } else if (name == "profile") {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
 
-        showPanel("home");
+        show_home_panel();
     }
 }
 
