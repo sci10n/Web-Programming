@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS Users;
+CREATE TABLE Users(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   email TEXT,
+                   password TEXT,
+                   firstname VARCHAR(50),
+                   familyname VARCHAR(50),
+                   gender VARCHAR(10),
+                   city VARCHAR(50),
+                   country VARCHAR(50));
