@@ -14,7 +14,7 @@ matchingPasswords = function(password, repassword) {
         repassword.setCustomValidity("");
     }
     repassword.checkValidity();
-}
+};
 
 customChangePassword = function(form) {
     var result = serverstub.changePassword(localStorage.getItem("user_token"), form.oldpassword.value, form.newpassword.value);
@@ -33,7 +33,7 @@ customSignOut = function() {
     if (result.success) {
         changeView("welcome");
     }
-}
+};
 
 customSignIn = function(form) {
     var result = serverstub.signIn(form.username.value, form.password.value);
@@ -51,7 +51,7 @@ showHomePanel = function(){
     showPanel("home");
     getInfo(result.email);
     getMessages(document.getElementById("message_board_self"));
-}
+};
 
 showPanel = function(name) {
     homePanel.style.display = "none";
@@ -65,7 +65,6 @@ showPanel = function(name) {
         accountPanel.style.display = "block";
     }
 };
-
 
 customSignUp = function(form) {
     var input = {
@@ -137,11 +136,11 @@ changeView = function(name) {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
         showHomePanel();
     }
-}
+};
 
 init = function() {
     changeView("welcome");
-}
+};
 
 window.onload = function() {
     init();

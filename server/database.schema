@@ -7,3 +7,6 @@ CREATE TABLE Users(id INTEGER PRIMARY KEY AUTOINCREMENT,
                    gender VARCHAR(10),
                    city VARCHAR(50),
                    country VARCHAR(50));
+
+DROP TABLE IF EXIST UserTokens;
+CREATE TABLE UserTokens(id INTEGER FOREIGN KEY,

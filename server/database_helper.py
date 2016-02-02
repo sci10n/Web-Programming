@@ -1,5 +1,4 @@
 import sqlite3
-from flask import g
 
 DATABASE = "database.db"
 
@@ -7,19 +6,10 @@ def init_db():
     db = connect_db()
     with db:
         cur = db.cursor()
-        cur.execute("DROP TABLE IF EXISTS Users;")
-        cur.execute("""CREATE TABLE Users(id INTEGER PRIMARY KEY AUTOINCREMENT, \
-                    email TEXT, \
-                    password TEXT, \
-                    firstname VARCHAR(50), \
-                    familyname VARCHAR(50), \
-                    gender VARCHAR(10), \
-                    city VARCHAR(50), \
-                    country VARCHAR(50) \
-                    );""")
+        with open('database.schema', mode='r') as f:
+            cur.executescript(f.read())
         cur.close()
         db.commit()
-
 
 def connect_db():
     return sqlite3.connect(DATABASE)
@@ -36,13 +26,11 @@ def sign_up(email, password, firstname,
     db = connect_db()
     with db:
         cur = db.cursor()
-        cur.execute("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country) VALUES (?, ?, ?, ?, ?, ?. ?)""", \
+        cur.execute("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country) VALUES (?, ?, ?, ?, ?, ?, ?)""", \
                     (email, password, firstname, familyname, gender, city, country,))
         cur.close()
         db.commit()
-        db.close()
 
-    raise NotImplementedError
 
 def sign_out(token):
     raise NotImplementedError
