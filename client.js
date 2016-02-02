@@ -31,6 +31,7 @@ customChangePassword = function(form) {
 customSignOut = function() {
     var result = serverstub.signOut(localStorage.getItem("user_token"));
     if (result.success) {
+	localStorage.removeItem("user_token");
         changeView("welcome");
     }
 }
@@ -127,6 +128,7 @@ customPostMessage = function(form) {
     if (result.success) {
 	getMessages(document.getElementById("message_board_self"));
 	form.reset();
+	getMessages(document.getElementById("message_board_self"));
     } 
 };
 
@@ -140,7 +142,14 @@ changeView = function(name) {
 }
 
 init = function() {
-    changeView("welcome");
+    if (localStorage.getItem("user_token") === null) {
+	changeView("welcome");	
+    }
+    else {
+	changeView("profile");	
+
+    }
+
 }
 
 window.onload = function() {
