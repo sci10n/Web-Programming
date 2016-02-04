@@ -14,8 +14,7 @@ def before_request():
 
 @app.teardown_request
 def teardown_request(exception):
-    if hasattr(g, "gb"):
-        g.db.close()
+    database_helper.close_db()
 
 
 @app.route("/")

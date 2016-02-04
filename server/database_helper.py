@@ -29,7 +29,8 @@ def connect_db():
 
 
 def close_db():
-    g.db.close()
+    if hasattr(g, "gb"):
+        g.db.close()
 
 
 def sign_in(email, password):
