@@ -1,3 +1,6 @@
+import re
+import random
+
 import database_helper
 
 from flask import Flask, g
@@ -17,63 +20,135 @@ def teardown_request(exception):
 def home():
     return "OMG"
 
-@app.route("/user/<username>")
-def create_user(username):
-    with g.db:
-        cur = g.db.cursor()
-        cur.execute("INSERT INTO Users (Name) VALUES (?);", (username,))
-        g.db.commit()
+@app.route("/debug/signup")
+def debug_sign_up():
+    email = "asd@asd.com"
+    password = "asdasdasd"
+    firstname = "asdasd"
+    familyname = "asd"
+    gender = "asd"
+    city = "asd"
+    country = "asd"
 
-    return "CREATE_USER"
+    print(sign_up(email, password, firstname, familyname, gender, city, country))
 
-@app.route("/users")
-def list_users():
-    with g.db:
-        cur = g.db.cursor()
-        cur.execute("SELECT * FROM Users;")
-        entries = [row[1] for row in cur.fetchall()]
-        print(cur.fetchall())
+    return "SIGN UP"
 
-    name_list = ""
-    for name in entries:
-        name_list += name + "\n"
+@app.route("/debug/signin")
+def debug_sign_in():
+    email = "asd@asd.com"
+    password = "asdasdasd"
 
-    print(name_list)
+    print(sign_in(email, password))
 
-    return name_list
+    return "SIGN IN"
+
+@app.route("/debug/signout")
+def debug_sign_out():
+     token = "aaa"
+
+     print(sign_out(token))
+
+     return "SIGN OUT"
+
+@app.route("/debug/changepw")
+def debug_change_password():
+     token = "aaa"
+     old_password = "asdasdasd"
+     new_password = "asdasdasdasd"
+
+     print(change_password(token, old_password, new_password))
+
+     return "SIGN OUT"
+
+@app.route("/debug/pm")
+def debug_post_message():
+     token = "aaa"
+     message = "HELLO WORLD"
+     email = "asd@asd.com"
+
+     print(post_message(token, message, email))
+
+     return "SIGN OUT"
+
+@app.route("/debug/gm")
+def debug_get_message():
+     token = "aaa"
+     email = "asd@asd.com"
+
+     print(get_user_messages_by_token(token))
+
+     return "SIGN OUT"
+
+def generate_token():
+    letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    token = ""
+
+    for i in range(36):
+        token += letters[random.randint(0, len(letters) - 1)]
+
+    return "aaa"
 
 def sign_in(email, password):
-    raise NotImplementedError
+    if database_helper.sign_in(email, password):
+        token = generate_token()
+        while not database_helper.insert_token(email, token):
+            token = generate_token()
+        return {"success": True, "message": "Successfully signed in.", "data": token}
+    return {"success": False, "message": "Wrong username or password."}
+
+def valid_email(email):
+    return re.match(r"^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$", email)
+
+def valid_password(password):
+    return len(password) > 7
 
 def sign_up(email, password, firstname,
             familyname, gender, city,
             country):
-    database_helper.sign_up(email=email, password=password,
+
+    if not valid_email(email) or not valid_password(password):
+        return {"success": False, "message": "Form data missing or incorrect type."}
+
+    if database_helper.sign_up(email=email, password=password,
                             firstname=firstname, familyname=familyname,
-                            gender=gender, city=city, country=country)
-    return "SIGN UP"
+                            gender=gender, city=city, country=country):
+        return {"success": True, "message": "Successfully created a new user."}
+
+    return {"success": False, "message": "User already exists."}
 
 def sign_out(token):
-    raise NotImplementedError
+    if database_helper.sign_out(token):
+        return {"success": True, "message": "Successfully signed out."}
+
+    return {"success": False, "message": "You are not signed in."}
 
 def change_password(token, old_password,
                     new_password):
-    raise NotImplementedError
+
+    status = database_helper.change_password(token, old_password, new_password)
+
+    if status == 1:
+        return {"success": True, "message": "Password changed."}
+    elif status == 2:
+        return {"success": False, "message": "Wrong password."}
+    elif status == 3:
+        return {"success": False, "message": "You are not logged in."}
 
 def get_user_data_by_token(token):
-    raise NotImplementedError
+    return database_helper.get_user_data_by_token(token)
 
 def get_user_data_by_email(token, email):
-    raise NotImplementedError
+    return database_helper.get_user_data_by_email(token, email)
 
 def get_user_messages_by_token(token):
-    raise NotImplementedError
+    return database_helper.get_user_messages_by_token(token)
 
 def get_user_messages_by_email(token, email):
-    raise NotImplementedError
+    return database_helper.get_user_messages_by_email(token, email)
 
 def post_message(token, message, email):
-    raise NotImplementedError
+    return database_helper.post_message(token, message, email)
 
 if __name__ == "__main__":
     database_helper.init_db()
