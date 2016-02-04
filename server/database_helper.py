@@ -34,7 +34,7 @@ def close_db():
 
 def sign_in(email, password):
     if not sign_in_helper(email, password):
-        return WRONG_USERNAME_PASSWORD
+        return WRONG_USERNAME_PASSWORD, None
 
     token = generate_token()
     while not insert_token(email, token):
@@ -207,8 +207,8 @@ def get_user_data_by_email(token, email):
                     'country': unprocessed_data[6],
                 }
             return SUCCESS, data
-        return NO_SUCH_USER
-    return NOT_SIGNED_IN
+        return NO_SUCH_USER, None
+    return NOT_SIGNED_IN, None
 
 
 def get_user_data(email):
@@ -235,12 +235,12 @@ def get_user_messages_by_token(token):
 def get_user_messages_by_email(token, email):
     if get_email_from_token(token):
         if not user_exist(email):
-            NO_SUCH_USER
+            return NO_SUCH_USER, None
 
         messages = get_messages(email)
         data = [{"writer": writer, "message": message} for writer, message in messages]
         return SUCCESS, data
-    return NOT_SIGNED_IN
+    return NOT_SIGNED_IN, None
 
 
 def user_exist(email):

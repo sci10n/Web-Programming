@@ -76,7 +76,7 @@ def debug_post_message():
 
     print(post_message(token, message, email))
 
-    return "SIGN OUT"
+    return "POST MESSAGE"
 
 
 @app.route("/debug/gm")
@@ -86,7 +86,7 @@ def debug_get_message():
 
     print(get_user_messages_by_token(token))
 
-    return "SIGN OUT"
+    return "GET MESSAGE"
 
 
 def valid_email(email):
