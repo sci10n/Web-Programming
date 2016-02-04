@@ -89,29 +89,6 @@ def debug_get_message():
     return "GET MESSAGE"
 
 
-def valid_email(email):
-    return re.match(r"^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$", email)
-
-
-def valid_password(password):
-    return len(password) > 7
-
-
-def get_status_translation(status):
-    if status == database_helper.NOT_SIGNED_IN:
-        return {"success": False, "message": "You are not signed in."}
-    elif status == database_helper.NO_SUCH_USER:
-        return {"success": False, "message": "No such user."}
-    elif status == database_helper.WRONG_PASSWORD:
-        return {"success": False, "message": "Wrong password."}
-    elif status == database_helper.WRONG_USERNAME_PASSWORD:
-        return {"success": False, "message": "Wrong username or password."}
-    elif status == database_helper.USER_ALREADY_EXIST:
-        return {"success": False, "message": "User already exists."}
-    else:
-        raise ValueError
-
-
 def sign_in(email, password):
     status, token = database_helper.sign_in(email, password)
 
@@ -135,6 +112,14 @@ def sign_up(email, password, firstname,
         return {"success": True, "message": "Successfully created a new user."}
 
     return get_status_translation(status)
+
+
+def valid_email(email):
+    return re.match(r"^[A-Za-z0-9\.\+_-]+@[A-Za-z0-9\._-]+\.[a-zA-Z]*$", email)
+
+
+def valid_password(password):
+    return len(password) > 7
 
 
 def sign_out(token):
@@ -199,6 +184,21 @@ def post_message(token, message, email):
         return {"success": True, "message": "Message posted"}
 
     return get_status_translation(status)
+
+
+def get_status_translation(status):
+    if status == database_helper.NOT_SIGNED_IN:
+        return {"success": False, "message": "You are not signed in."}
+    elif status == database_helper.NO_SUCH_USER:
+        return {"success": False, "message": "No such user."}
+    elif status == database_helper.WRONG_PASSWORD:
+        return {"success": False, "message": "Wrong password."}
+    elif status == database_helper.WRONG_USERNAME_PASSWORD:
+        return {"success": False, "message": "Wrong username or password."}
+    elif status == database_helper.USER_ALREADY_EXIST:
+        return {"success": False, "message": "User already exists."}
+    else:
+        raise ValueError
 
 
 if __name__ == "__main__":
