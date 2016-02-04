@@ -208,7 +208,9 @@ def get_user_data_by_email(token, email):
                     'country': unprocessed_data[6],
                 }
             return SUCCESS, data
+
         return NO_SUCH_USER, None
+
     return NOT_SIGNED_IN, None
 
 
@@ -241,6 +243,7 @@ def get_user_messages_by_email(token, email):
         messages = get_messages(email)
         data = [{"writer": writer, "message": message} for writer, message in messages]
         return SUCCESS, data
+
     return NOT_SIGNED_IN, None
 
 

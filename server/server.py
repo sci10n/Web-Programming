@@ -91,7 +91,7 @@ def debug_get_message():
 def sign_in(email, password):
     status, token = database_helper.sign_in(email, password)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "Successfully signed in.", "data": token}
 
     return get_status_translation(status)
@@ -107,7 +107,7 @@ def sign_up(email, password, firstname,
                                      firstname=firstname, familyname=familyname,
                                      gender=gender, city=city, country=country)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "Successfully created a new user."}
 
     return get_status_translation(status)
@@ -124,7 +124,7 @@ def valid_password(password):
 def sign_out(token):
     status = database_helper.sign_out(token)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "Successfully signed out."}
 
     return get_status_translation(status)
@@ -134,7 +134,7 @@ def change_password(token, old_password,
                     new_password):
     status = database_helper.change_password(token, old_password, new_password)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "Password changed."}
 
     return get_status_translation(status)
@@ -143,7 +143,7 @@ def change_password(token, old_password,
 def get_user_data_by_token(token):
     status, data = database_helper.get_user_data_by_token(token)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
 
     return get_status_translation(status)
@@ -152,7 +152,7 @@ def get_user_data_by_token(token):
 def get_user_data_by_email(token, email):
     status, data = database_helper.get_user_data_by_email(token, email)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
 
     return get_status_translation(status)
@@ -161,7 +161,7 @@ def get_user_data_by_email(token, email):
 def get_user_messages_by_token(token):
     status, data = database_helper.get_user_messages_by_token(token)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
 
     return get_status_translation(status)
@@ -170,7 +170,7 @@ def get_user_messages_by_token(token):
 def get_user_messages_by_email(token, email):
     status, data = get_user_messages_by_email(token, email)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
 
     return get_status_translation(status)
@@ -179,10 +179,14 @@ def get_user_messages_by_email(token, email):
 def post_message(token, message, email):
     status = database_helper.post_message(token, message, email)
 
-    if status == database_helper.SUCCESS:
+    if success(status):
         return {"success": True, "message": "Message posted"}
 
     return get_status_translation(status)
+
+
+def success(status):
+    return status == database_helper.SUCCESS
 
 
 def get_status_translation(status):
