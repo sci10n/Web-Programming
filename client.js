@@ -66,7 +66,6 @@ showPanel = function(name) {
     }
 };
 
-
 customSignUp = function(form) {
     var input = {
         email: form.email.value,

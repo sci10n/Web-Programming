@@ -1,9 +1,18 @@
+import random
 import sqlite3
 
 from flask import g
 
 DATABASE = "database.db"
 DATABASE_SCHEMA = "database.schema"
+
+SUCCESS = 1
+NO_SUCH_USER = 2
+NOT_SIGNED_IN = 3
+WRONG_PASSWORD = 4
+WRONG_USERNAME_PASSWORD = 5
+USER_ALREADY_EXIST = 6
+
 
 def init_db():
     db = connect_db()
@@ -14,14 +23,27 @@ def init_db():
         cur.close()
         db.commit()
 
+
 def connect_db():
     return sqlite3.connect(DATABASE)
+
 
 def close_db():
     g.db.close()
 
 
 def sign_in(email, password):
+    if not sign_in_helper(email, password):
+        return WRONG_USERNAME_PASSWORD
+
+    token = generate_token()
+    while not insert_token(email, token):
+        token = generate_token()
+
+    return SUCCESS, token
+
+
+def sign_in_helper(email, password):
     with g.db:
         cur = g.db.cursor()
         try:
@@ -30,7 +52,7 @@ def sign_in(email, password):
             status = len(cur.fetchall())
             cur.close()
             g.db.commit()
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             return False
 
     if status != 1:
@@ -38,13 +60,24 @@ def sign_in(email, password):
 
     return True
 
+
+def generate_token():
+    letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    token = ""
+
+    for i in range(36):
+        token += letters[random.randint(0, len(letters) - 1)]
+
+    return "aaa"
+
+
 def insert_token(email, token):
     with g.db:
         cur = g.db.cursor()
         try:
             cur.execute("""INSERT INTO UserTokens (email, token)
                            VALUES (?, ?)""",
-                           (email, token,))
+                        (email, token,))
             cur.close()
             g.db.commit()
         except sqlite3.Error:
@@ -52,7 +85,18 @@ def insert_token(email, token):
 
         return True
 
+
 def sign_up(email, password, firstname,
+            familyname, gender, city,
+            country):
+    if sign_up_helper(email, password, firstname, familyname,
+                      gender, city, country):
+        return SUCCESS
+
+    return USER_ALREADY_EXIST
+
+
+def sign_up_helper(email, password, firstname,
             familyname, gender, city,
             country):
     with g.db:
@@ -60,7 +104,7 @@ def sign_up(email, password, firstname,
         try:
             cur.execute("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country)
                            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                           (str(email), password, firstname, familyname, gender, city, country,))
+                        (email, password, firstname, familyname, gender, city, country,))
             cur.close()
             g.db.commit()
         except sqlite3.Error:
@@ -70,6 +114,13 @@ def sign_up(email, password, firstname,
 
 
 def sign_out(token):
+    if sign_out_helper(token):
+        return SUCCESS
+
+    return NOT_SIGNED_IN
+
+
+def sign_out_helper(token):
     with g.db:
         cur = g.db.cursor()
         try:
@@ -77,8 +128,7 @@ def sign_out(token):
                                  (token,)).rowcount
             cur.close()
             g.db.commit()
-        except sqlite3.Error as e:
-            print(e.message)
+        except sqlite3.Error:
             return False
 
         if status != 1:
@@ -86,7 +136,12 @@ def sign_out(token):
 
         return True
 
+
 def get_email_from_token(token):
+    return get_email_from_token_helper(token)
+
+
+def get_email_from_token_helper(token):
     with g.db:
         cur = g.db.cursor()
         try:
@@ -94,8 +149,7 @@ def get_email_from_token(token):
                                  (token,)).fetchall()
             cur.close()
             g.db.commit()
-        except sqlite3.Error as e:
-            print(e.message)
+        except sqlite3.Error:
             return ""
 
         if status:
@@ -103,22 +157,6 @@ def get_email_from_token(token):
 
         return ""
 
-def change_password_helper(email, old_password, new_password):
-    with g.db:
-            cur = g.db.cursor()
-            try:
-                status = cur.execute("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
-                                    (new_password, email, old_password,)).rowcount
-                cur.close()
-                g.db.commit()
-            except sqlite3.Error as e:
-                print(e.message)
-                return False
-
-    if status != 1:
-        return False
-
-    return True
 
 def change_password(token, old_password,
                     new_password):
@@ -126,14 +164,52 @@ def change_password(token, old_password,
 
     if email:
         if change_password_helper(email, old_password, new_password):
-            return 1
+            return SUCCESS
         else:
-            return 2
+            return WRONG_PASSWORD
 
-    return 3
+    return NOT_SIGNED_IN
+
+
+def change_password_helper(email, old_password, new_password):
+    with g.db:
+        cur = g.db.cursor()
+        try:
+            status = cur.execute("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
+                                 (new_password, email, old_password,)).rowcount
+            cur.close()
+            g.db.commit()
+        except sqlite3.Error:
+            return False
+
+    if status != 1:
+        return False
+
+    return True
+
 
 def get_user_data_by_token(token):
     return get_user_data_by_email(token, get_email_from_token(token))
+
+
+def get_user_data_by_email(token, email):
+    if email and email == get_email_from_token(token):
+        unprocessed_data = get_user_data(email)
+
+        if unprocessed_data:
+            data = \
+                {
+                    'email': unprocessed_data[0],
+                    'firstname': unprocessed_data[2],
+                    'familyname': unprocessed_data[3],
+                    'gender': unprocessed_data[4],
+                    'city': unprocessed_data[5],
+                    'country': unprocessed_data[6],
+                }
+            return SUCCESS, data
+        return NO_SUCH_USER
+    return NOT_SIGNED_IN
+
 
 def get_user_data(email):
     with g.db:
@@ -143,8 +219,7 @@ def get_user_data(email):
                                  (email,)).fetchall()
             cur.close()
             g.db.commit()
-        except sqlite3.Error as e:
-            print(e.message)
+        except sqlite3.Error:
             return ()
 
     if status:
@@ -153,44 +228,20 @@ def get_user_data(email):
     return ()
 
 
-def get_user_data_by_email(token, email):
-    if email and email == get_email_from_token(token):
-        data = get_user_data(email)
-
-        if data:
-            match = \
-            {
-            'email': data[0],
-            'firstname': data[2],
-			'familyname': data[3],
-			'gender': data[4],
-			'city': data[5],
-			'country': data[6],
-		    }
-            return {"success": True, "message": "User data retrieved.", "data": match}
-        return {"success": False, "message": "No such user."}
-    return {"success": False, "message": "You are not signed in."}
-
-
 def get_user_messages_by_token(token):
     return get_user_messages_by_email(token, get_email_from_token(token))
 
-def get_messages(email):
-    with g.db:
-        cur = g.db.cursor()
-        try:
-            status = cur.execute("""SELECT Writer, Message FROM UserMessages WHERE email = ?""",
-                                 (email,)).fetchall()
-            cur.close()
-            g.db.commit()
-        except sqlite3.Error as e:
-            print(e.message)
-            return ()
 
-    if status:
-        return status
+def get_user_messages_by_email(token, email):
+    if get_email_from_token(token):
+        if not user_exist(email):
+            NO_SUCH_USER
 
-    return ()
+        messages = get_messages(email)
+        data = [{"writer": writer, "message": message} for writer, message in messages]
+        return SUCCESS, data
+    return NOT_SIGNED_IN
+
 
 def user_exist(email):
     with g.db:
@@ -200,8 +251,7 @@ def user_exist(email):
             status = len(cur.fetchall())
             cur.close()
             g.db.commit()
-        except sqlite3.Error as e:
-            print(e.message)
+        except sqlite3.Error:
             return False
 
     if status != 1:
@@ -209,16 +259,33 @@ def user_exist(email):
 
     return True
 
-def get_user_messages_by_email(token, email):
+
+def get_messages(email):
+    with g.db:
+        cur = g.db.cursor()
+        try:
+            status = cur.execute("""SELECT Writer, Message FROM UserMessages WHERE email = ?""",
+                                 (email,)).fetchall()
+            cur.close()
+            g.db.commit()
+        except sqlite3.Error:
+            return ()
+
+    if status:
+        return status
+
+    return ()
+
+
+def post_message(token, message, email):
     if get_email_from_token(token):
         if not user_exist(email):
-            return {"success": False, "message": "No such user."}
+            return NO_SUCH_USER
 
-        messages = get_messages(email)
-        data = [{"writer": writer, "message": message} for writer, message in messages]
+        if post_message_helper(email, get_email_from_token(token), message):
+            return SUCCESS
 
-        return {"success": True, "message": "User messages retrieved.", "data": data}
-    return {"success": False, "message": "You are not signed in."}
+    return NOT_SIGNED_IN
 
 
 def post_message_helper(email, writer, message):
@@ -227,20 +294,10 @@ def post_message_helper(email, writer, message):
         try:
             cur.execute("""INSERT INTO UserMessages (email, writer, message)
                            VALUES (?, ?, ?)""",
-                           (email, writer, message,))
+                        (email, writer, message,))
             cur.close()
             g.db.commit()
         except sqlite3.Error:
             return False
 
-        return True
-
-def post_message(token, message, email):
-    if gget_email_from_token(token):
-        if not user_exist(email):
-            return {"success": False, "message": "No such user."}
-
-        if post_message_helper(email, get_email_from_token(token), message):
-             return {"success": True, "message": "Message posted"}
-
-    return {"success": False, "message": "You are not signed in."}
+    return True
