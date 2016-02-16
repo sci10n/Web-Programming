@@ -299,3 +299,29 @@ def post_message_helper(email, writer, message):
             return False
 
     return True
+
+
+# def post_message_helper_test(email, writer, message):
+#     result = execute_query("""INSERT INTO UserMessages (email, writer, message)
+#                            VALUES (?, ?, ?)""",
+#                            (email, writer, message), commit=True)
+#     if result:
+#         return True
+#
+#     return False
+#
+#
+# def execute_query(query, args=(), commit=False):
+#     with g.db:
+#         cur = g.db.cursor()
+#         try:
+#             result = cur.execute(query, args).fetchall()
+#             cur.close()
+#
+#             if commit:
+#                 g.db.commit()
+#
+#         except sqlite3.Error:
+#             return None
+#
+#     return result
