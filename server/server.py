@@ -1,6 +1,6 @@
 import re
 
-from flask import Flask, g
+from flask import Flask, g, request
 
 import database_helper
 
@@ -86,6 +86,26 @@ def debug_get_message():
     print(get_user_messages_by_token(token))
 
     return "GET MESSAGE"
+
+
+@app.route('/signin/', methods=['GET'])
+def sign_in_GET():
+    email = request.form['email']
+    password = request.form['password']
+    return sign_in(email, password)
+
+
+@app.route('/signin/', methods=['POST'])
+def sign_up_POST():
+    email = request.form['email']
+    password = request.form['password']
+    firstname = request.form['firstname']
+    familyname = request.form['familyname']
+    gender = request.form['gender']
+    city = request.form['city']
+    country = request.form['country']
+    return sign_up(email, password, firstname, familyname,
+                   gender, city, country)
 
 
 def sign_in(email, password):

@@ -69,7 +69,7 @@ def generate_token():
     for i in range(36):
         token += letters[random.randint(0, len(letters) - 1)]
 
-    return "aaa"
+    return token
 
 
 def insert_token(email, token):
