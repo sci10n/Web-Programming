@@ -52,7 +52,6 @@ def sign_in_helper(email, password):
                         (email, password,))
             status = len(cur.fetchall())
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return False
 
@@ -84,7 +83,7 @@ def insert_token(email, token):
         except sqlite3.Error:
             return False
 
-        return True
+    return True
 
 
 def sign_up(email, password, firstname,
@@ -111,7 +110,7 @@ def sign_up_helper(email, password, firstname,
         except sqlite3.Error:
             return False
 
-        return True
+    return True
 
 
 def sign_out(token):
@@ -135,7 +134,7 @@ def sign_out_helper(token):
         if status != 1:
             return False
 
-        return True
+    return True
 
 
 def get_email_from_token(token):
@@ -149,14 +148,13 @@ def get_email_from_token_helper(token):
             status = cur.execute("""SELECT email FROM UserTokens WHERE token = ?""",
                                  (token,)).fetchall()
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return ""
 
-        if status:
-            return str(status[0][0])
+    if status:
+        return str(status[0][0])
 
-        return ""
+    return ""
 
 
 def change_password(token, old_password,
@@ -179,7 +177,6 @@ def change_password_helper(email, old_password, new_password):
             status = cur.execute("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
                                  (new_password, email, old_password,)).rowcount
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return False
 
@@ -221,7 +218,6 @@ def get_user_data(email):
             status = cur.execute("""SELECT * FROM Users WHERE email = ?""",
                                  (email,)).fetchall()
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return ()
 
@@ -254,7 +250,6 @@ def user_exist(email):
             cur.execute("""SELECT * FROM Users WHERE email = ?""", (email,))
             status = len(cur.fetchall())
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return False
 
@@ -271,7 +266,6 @@ def get_messages(email):
             status = cur.execute("""SELECT Writer, Message FROM UserMessages WHERE email = ?""",
                                  (email,)).fetchall()
             cur.close()
-            g.db.commit()
         except sqlite3.Error:
             return ()
 
