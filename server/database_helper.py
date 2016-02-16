@@ -391,7 +391,7 @@ def post_message_helper(email, writer, message):
     return True
 
 
-# def post_message_helper_test(email, writer, message):
+# def post_message_helper(email, writer, message):
 #     result = execute_query("""INSERT INTO UserMessages (email, writer, message)
 #                            VALUES (?, ?, ?)""",
 #                            (email, writer, message), commit=True)
