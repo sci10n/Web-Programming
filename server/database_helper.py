@@ -99,7 +99,7 @@ def insert_token(email, token):
 # def insert_token(email, token):
 #     result = execute_query("""INSERT INTO UserTokens (email, token)
 #                               VALUES (?, ?)""",
-#                            (email, token))
+#                            (email, token), commit=True)
 #
 #     if result:
 #         return True
@@ -138,7 +138,7 @@ def sign_up_helper(email, password, firstname,
 #                    familyname, gender, city, country):
 #     result = execute_query("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country)
 #                               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-#                         (email, password, firstname, familyname, gender, city, country))
+#                         (email, password, firstname, familyname, gender, city, country), commit=True)
 #
 #     if result:
 #         return True
@@ -241,7 +241,7 @@ def change_password_helper(email, old_password, new_password):
 
 # def change_password_helper(email, old_password, new_password):
 #     result = execute_query("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
-#                             (new_password, email, old_password))
+#                             (new_password, email, old_password), commit=True)
 #
 #     if result and len(result) == 1:
 #         return True
