@@ -61,6 +61,16 @@ def sign_in_helper(email, password):
     return True
 
 
+# def sign_in_helper(email, password):
+#     result = execute_query("""SELECT * FROM Users WHERE email = ? AND password = ?""",
+#                            (email, password))
+#
+#     if result and len(result) == 1:
+#         return True
+#
+#     return False
+
+
 def generate_token():
     letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
     token = ""
@@ -84,6 +94,17 @@ def insert_token(email, token):
             return False
 
     return True
+
+
+# def insert_token(email, token):
+#     result = execute_query("""INSERT INTO UserTokens (email, token)
+#                               VALUES (?, ?)""",
+#                            (email, token))
+#
+#     if result:
+#         return True
+#
+#     return False
 
 
 def sign_up(email, password, firstname,
@@ -113,6 +134,18 @@ def sign_up_helper(email, password, firstname,
     return True
 
 
+# def sign_up_helper(email, password, firstname,
+#                    familyname, gender, city, country):
+#     result = execute_query("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country)
+#                               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+#                         (email, password, firstname, familyname, gender, city, country))
+#
+#     if result:
+#         return True
+#
+#     return False
+
+
 def sign_out(token):
     if sign_out_helper(token):
         return SUCCESS
@@ -137,6 +170,16 @@ def sign_out_helper(token):
     return True
 
 
+# def sign_out_helper(token):
+#     result = execute_query("""DELETE FROM UserTokens WHERE token = ?""",
+#                            (token))
+#
+#     if result and len(result) == 1:
+#         return True
+#
+#     return False
+
+
 def get_email_from_token(token):
     return get_email_from_token_helper(token)
 
@@ -155,6 +198,16 @@ def get_email_from_token_helper(token):
         return str(status[0][0])
 
     return ""
+
+
+# def get_email_from_token_helper(token):
+#     result = execute_query("""SELECT email FROM UserTokens WHERE token = ?""",
+#                            (token))
+#
+#     if result:
+#         return str(result[0][0])
+#
+#     return ""
 
 
 def change_password(token, old_password,
@@ -184,6 +237,16 @@ def change_password_helper(email, old_password, new_password):
         return False
 
     return True
+
+
+# def change_password_helper(email, old_password, new_password):
+#     result = execute_query("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
+#                             (new_password, email, old_password))
+#
+#     if result and len(result) == 1:
+#         return True
+#
+#     return False
 
 
 def get_user_data_by_token(token):
@@ -227,6 +290,16 @@ def get_user_data(email):
     return ()
 
 
+# def get_user_data(email):
+#     result = execute_query("""SELECT * FROM Users WHERE email = ?""",
+#                            (email))
+#
+#     if result:
+#         return result[0]
+#
+#     return ()
+
+
 def get_user_messages_by_token(token):
     return get_user_messages_by_email(token, get_email_from_token(token))
 
@@ -259,6 +332,15 @@ def user_exist(email):
     return True
 
 
+# def user_exist(email):
+#     result = execute_query("""SELECT * FROM Users WHERE email = ?""", (email))
+#
+#     if result and len(result) == 1:
+#         return True
+#
+#     return False
+
+
 def get_messages(email):
     with g.db:
         cur = g.db.cursor()
@@ -273,6 +355,15 @@ def get_messages(email):
         return status
 
     return ()
+
+
+# def get_messages(email):
+#     result = execute_query("""SELECT Writer, Message FROM UserMessages WHERE email = ?""", (email))
+#
+#     if result:
+#         return result
+#
+#     return ()
 
 
 def post_message(token, message, email):
@@ -290,8 +381,7 @@ def post_message_helper(email, writer, message):
     with g.db:
         cur = g.db.cursor()
         try:
-            cur.execute("""INSERT INTO UserMessages (email, writer, message)
-                           VALUES (?, ?, ?)""",
+            cur.execute("""INSERT INTO UserMessages (email, writer, message) VALUES (?, ?, ?)""",
                         (email, writer, message,))
             cur.close()
             g.db.commit()
@@ -309,19 +399,19 @@ def post_message_helper(email, writer, message):
 #         return True
 #
 #     return False
-#
-#
-# def execute_query(query, args=(), commit=False):
-#     with g.db:
-#         cur = g.db.cursor()
-#         try:
-#             result = cur.execute(query, args).fetchall()
-#             cur.close()
-#
-#             if commit:
-#                 g.db.commit()
-#
-#         except sqlite3.Error:
-#             return None
-#
-#     return result
+
+
+def execute_query(query, args=(), commit=False):
+    with g.db:
+        cur = g.db.cursor()
+        try:
+            result = cur.execute(query, args).fetchall()
+            cur.close()
+
+            if commit:
+                g.db.commit()
+
+        except sqlite3.Error:
+            return None
+
+    return result

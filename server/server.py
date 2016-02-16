@@ -18,85 +18,14 @@ def teardown_request(exception):
     database_helper.close_db()
 
 
-@app.route("/")
-def home():
-    return "OMG"
-
-
-@app.route("/debug/signup")
-def debug_sign_up():
-    email = "asd@asd.com"
-    password = "asdasdasd"
-    firstname = "asdasd"
-    familyname = "asd"
-    gender = "asd"
-    city = "asd"
-    country = "asd"
-
-    print(sign_up(email, password, firstname, familyname, gender, city, country))
-
-    return "SIGN UP"
-
-
-@app.route("/debug/signin")
-def debug_sign_in():
-    email = "asd@asd.com"
-    password = "asdasdasd"
-
-    print(sign_in(email, password))
-
-    return "SIGN IN"
-
-
-@app.route("/debug/signout")
-def debug_sign_out():
-    token = "aaa"
-
-    print(sign_out(token))
-
-    return "SIGN OUT"
-
-
-@app.route("/debug/changepw")
-def debug_change_password():
-    token = "aaa"
-    old_password = "asdasdasd"
-    new_password = "asdasdasdasd"
-
-    print(change_password(token, old_password, new_password))
-
-    return "SIGN OUT"
-
-
-@app.route("/debug/pm")
-def debug_post_message():
-    token = "aaa"
-    message = "HELLO WORLD"
-    email = "asd@asd.com"
-
-    print(post_message(token, message, email))
-
-    return "POST MESSAGE"
-
-
-@app.route("/debug/gm")
-def debug_get_message():
-    token = "aaa"
-    email = "asd@asd.com"
-
-    print(get_user_messages_by_token(token))
-
-    return "GET MESSAGE"
-
-
-@app.route('/signin/', methods=['POST'])
+@app.route('/signin', methods=['POST'])
 def sign_in_POST():
     email = request.form['email']
     password = request.form['password']
     return json.dumps(sign_in(email, password))
 
 
-@app.route('/signup/', methods=['POST'])
+@app.route('/signup', methods=['POST'])
 def sign_up_POST():
     email = request.form['email']
     password = request.form['password']
@@ -107,6 +36,47 @@ def sign_up_POST():
     country = request.form['country']
     return json.dumps(sign_up(email, password, firstname, familyname,
                               gender, city, country))
+
+@app.route('/signout', methods=['POST'])
+def sign_out_POST():
+    token = request.form["token"]
+    return json.dumps(sign_out(token))
+
+
+@app.route('/changepw', methods=['POST'])
+def change_pw_POST():
+    token = request.form["token"]
+    old_password = request.form["oldpassword"]
+    new_password = request.form["newpassword"]
+    return json.dumps(change_password(token, old_password, new_password))
+
+
+@app.route('/postmsg', methods=['POST'])
+def post_msg_POST():
+    token = request.form["token"]
+    message = request.form["message"]
+    email = request.form["email"]
+    return json.dumps(post_message(token, message, email))
+
+
+@app.route('/getuserdatabytoken/<token>', methods=['GET'])
+def get_usr_data_by_token_GET(token):
+    return json.dumps(get_user_data_by_token(token))
+
+
+@app.route('/getuserdatabyemail/<token>/<email>', methods=['GET'])
+def get_usr_data_by_email_GET(token, email):
+    return json.dumps(get_user_data_by_email(token, email))
+
+
+@app.route('/getusermessagesbytoken/<token>', methods=['GET'])
+def get_usr_messages_by_token_GET(token):
+    return json.dumps(get_user_messages_by_token(token))
+
+
+@app.route('/getusermessagesbyemail/<token>/<email>', methods=['GET'])
+def get_usr_messages_by_email_GET(token, email):
+    return json.dumps(get_user_messages_by_email(token, email))
 
 
 def sign_in(email, password):
@@ -151,8 +121,10 @@ def sign_out(token):
     return get_status_translation(status)
 
 
-def change_password(token, old_password,
-                    new_password):
+def change_password(token, old_password, new_password):
+    if not valid_password(new_password):
+        return {"success": False, "message": "Form data missing or incorrect type."}
+
     status = database_helper.change_password(token, old_password, new_password)
 
     if success(status):
