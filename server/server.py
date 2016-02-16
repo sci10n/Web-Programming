@@ -1,3 +1,4 @@
+import json
 import re
 
 from flask import Flask, g, request
@@ -88,14 +89,14 @@ def debug_get_message():
     return "GET MESSAGE"
 
 
-@app.route('/signin/', methods=['GET'])
-def sign_in_GET():
+@app.route('/signin/', methods=['POST'])
+def sign_in_POST():
     email = request.form['email']
     password = request.form['password']
-    return sign_in(email, password)
+    return json.dumps(sign_in(email, password))
 
 
-@app.route('/signin/', methods=['POST'])
+@app.route('/signup/', methods=['POST'])
 def sign_up_POST():
     email = request.form['email']
     password = request.form['password']
@@ -104,8 +105,8 @@ def sign_up_POST():
     gender = request.form['gender']
     city = request.form['city']
     country = request.form['country']
-    return sign_up(email, password, firstname, familyname,
-                   gender, city, country)
+    return json.dumps(sign_up(email, password, firstname, familyname,
+                              gender, city, country))
 
 
 def sign_in(email, password):
