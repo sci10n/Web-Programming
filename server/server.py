@@ -45,6 +45,7 @@ def sign_up_POST():
     return json.dumps(sign_up(email, password, firstname, familyname,
                               gender, city, country))
 
+
 @app.route('/signout', methods=['POST'])
 def sign_out_POST():
     token = request.form["token"]
@@ -134,8 +135,7 @@ def sign_up(email, password, firstname,
 
 
 def sign_up_helper(email, password, firstname,
-            familyname, gender, city,
-            country):
+                   familyname, gender, city, country):
     if database_helper.sign_up(email, password, firstname, familyname,
                                gender, city, country):
         return SUCCESS
@@ -179,8 +179,7 @@ def change_password(token, old_password, new_password):
     return get_status_translation(status)
 
 
-def change_password_helper(token, old_password,
-                    new_password):
+def change_password_helper(token, old_password, new_password):
     email = database_helper.get_email_from_token(token)
 
     if email:
