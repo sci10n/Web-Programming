@@ -1,4 +1,5 @@
 import json
+import random
 import re
 
 from flask import Flask, g, request
@@ -6,6 +7,13 @@ from flask import Flask, g, request
 import database_helper
 
 app = Flask(__name__)
+
+SUCCESS = 1
+NO_SUCH_USER = 2
+NOT_SIGNED_IN = 3
+WRONG_PASSWORD = 4
+WRONG_USERNAME_PASSWORD = 5
+USER_ALREADY_EXIST = 6
 
 
 @app.before_request
@@ -44,7 +52,7 @@ def sign_out_POST():
 
 
 @app.route('/changepw', methods=['POST'])
-def change_pw_POST():
+def change_password_POST():
     token = request.form["token"]
     old_password = request.form["oldpassword"]
     new_password = request.form["newpassword"]
@@ -52,7 +60,7 @@ def change_pw_POST():
 
 
 @app.route('/postmsg', methods=['POST'])
-def post_msg_POST():
+def post_message_POST():
     token = request.form["token"]
     message = request.form["message"]
     email = request.form["email"]
@@ -60,17 +68,17 @@ def post_msg_POST():
 
 
 @app.route('/getuserdatabytoken/<token>', methods=['GET'])
-def get_usr_data_by_token_GET(token):
+def get_user_data_by_token_GET(token):
     return json.dumps(get_user_data_by_token(token))
 
 
 @app.route('/getuserdatabyemail/<token>/<email>', methods=['GET'])
-def get_usr_data_by_email_GET(token, email):
+def get_user_data_by_email_GET(token, email):
     return json.dumps(get_user_data_by_email(token, email))
 
 
 @app.route('/getusermessagesbytoken/<token>', methods=['GET'])
-def get_usr_messages_by_token_GET(token):
+def get_user_messages_by_token_GET(token):
     return json.dumps(get_user_messages_by_token(token))
 
 
@@ -80,12 +88,33 @@ def get_usr_messages_by_email_GET(token, email):
 
 
 def sign_in(email, password):
-    status, token = database_helper.sign_in(email, password)
+    status, token = sign_in_helper(email, password)
 
     if success(status):
         return {"success": True, "message": "Successfully signed in.", "data": token}
 
     return get_status_translation(status)
+
+
+def sign_in_helper(email, password):
+    if not database_helper.sign_in(email, password):
+        return WRONG_USERNAME_PASSWORD, None
+
+    token = generate_token()
+    while not database_helper.insert_token(email, token):
+        token = generate_token()
+
+    return SUCCESS, token
+
+
+def generate_token():
+    letters = "abcdefghiklmnopqrstuvwwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+    token = ""
+
+    for i in range(36):
+        token += letters[random.randint(0, len(letters) - 1)]
+
+    return token
 
 
 def sign_up(email, password, firstname,
@@ -94,14 +123,24 @@ def sign_up(email, password, firstname,
     if not valid_email(email) or not valid_password(password):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
-    status = database_helper.sign_up(email=email, password=password,
-                                     firstname=firstname, familyname=familyname,
-                                     gender=gender, city=city, country=country)
+    status = sign_up_helper(email=email, password=password,
+                            firstname=firstname, familyname=familyname,
+                            gender=gender, city=city, country=country)
 
     if success(status):
         return {"success": True, "message": "Successfully created a new user."}
 
     return get_status_translation(status)
+
+
+def sign_up_helper(email, password, firstname,
+            familyname, gender, city,
+            country):
+    if database_helper.sign_up(email, password, firstname, familyname,
+                               gender, city, country):
+        return SUCCESS
+
+    return USER_ALREADY_EXIST
 
 
 def valid_email(email):
@@ -113,7 +152,7 @@ def valid_password(password):
 
 
 def sign_out(token):
-    status = database_helper.sign_out(token)
+    status = sign_out_helper(token)
 
     if success(status):
         return {"success": True, "message": "Successfully signed out."}
@@ -121,11 +160,18 @@ def sign_out(token):
     return get_status_translation(status)
 
 
+def sign_out_helper(token):
+    if database_helper.sign_out(token):
+        return SUCCESS
+
+    return NOT_SIGNED_IN
+
+
 def change_password(token, old_password, new_password):
     if not valid_password(new_password):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
-    status = database_helper.change_password(token, old_password, new_password)
+    status = change_password_helper(token, old_password, new_password)
 
     if success(status):
         return {"success": True, "message": "Password changed."}
@@ -133,17 +179,34 @@ def change_password(token, old_password, new_password):
     return get_status_translation(status)
 
 
+def change_password_helper(token, old_password,
+                    new_password):
+    email = database_helper.get_email_from_token(token)
+
+    if email:
+        if database_helper.change_password(email, old_password, new_password):
+            return SUCCESS
+        else:
+            return WRONG_PASSWORD
+
+    return NOT_SIGNED_IN
+
+
 def get_user_data_by_token(token):
-    status, data = database_helper.get_user_data_by_token(token)
+    status, data = get_user_data_by_token_helper(token)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
 
     return get_status_translation(status)
+
+
+def get_user_data_by_token_helper(token):
+    return get_user_data_by_email_helper(token, database_helper.get_email_from_token(token))
 
 
 def get_user_data_by_email(token, email):
-    status, data = database_helper.get_user_data_by_email(token, email)
+    status, data = get_user_data_by_email_helper(token, email)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
@@ -151,17 +214,42 @@ def get_user_data_by_email(token, email):
     return get_status_translation(status)
 
 
+def get_user_data_by_email_helper(token, email):
+    if email and email == database_helper.get_email_from_token(token):
+        unprocessed_data = database_helper.get_user_data(email)
+
+        if unprocessed_data:
+            data = \
+                {
+                    'email': unprocessed_data[0],
+                    'firstname': unprocessed_data[2],
+                    'familyname': unprocessed_data[3],
+                    'gender': unprocessed_data[4],
+                    'city': unprocessed_data[5],
+                    'country': unprocessed_data[6],
+                }
+            return SUCCESS, data
+
+        return NO_SUCH_USER, None
+
+    return NOT_SIGNED_IN, None
+
+
 def get_user_messages_by_token(token):
-    status, data = database_helper.get_user_messages_by_token(token)
+    status, data = get_user_messages_by_token_helper(token)
 
     if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
 
     return get_status_translation(status)
+
+
+def get_user_messages_by_token_helper(token):
+    return get_user_messages_by_email_helper(token, database_helper.get_email_from_token(token))
 
 
 def get_user_messages_by_email(token, email):
-    status, data = get_user_messages_by_email(token, email)
+    status, data = get_user_messages_by_email_helper(token, email)
 
     if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
@@ -169,8 +257,27 @@ def get_user_messages_by_email(token, email):
     return get_status_translation(status)
 
 
+def get_user_messages_by_email_helper(token, email):
+    if database_helper.get_email_from_token(token):
+        if not user_exist(email):
+            return NO_SUCH_USER, None
+
+        messages = database_helper.get_messages(email)
+        data = [{"writer": writer, "message": message} for writer, message in messages]
+        return SUCCESS, data
+
+    return NOT_SIGNED_IN, None
+
+
+def user_exist(email):
+    if database_helper.get_user_data(email):
+        return True
+
+    return False
+
+
 def post_message(token, message, email):
-    status = database_helper.post_message(token, message, email)
+    status = post_message_helper(token, message, email)
 
     if success(status):
         return {"success": True, "message": "Message posted"}
@@ -178,20 +285,31 @@ def post_message(token, message, email):
     return get_status_translation(status)
 
 
+def post_message_helper(token, message, email):
+    if database_helper.get_email_from_token(token):
+        if not user_exist(email):
+            return NO_SUCH_USER
+
+        if database_helper.post_message(email, database_helper.get_email_from_token(token), message):
+            return SUCCESS
+
+    return NOT_SIGNED_IN
+
+
 def success(status):
-    return status == database_helper.SUCCESS
+    return status == SUCCESS
 
 
 def get_status_translation(status):
-    if status == database_helper.NOT_SIGNED_IN:
+    if status == NOT_SIGNED_IN:
         return {"success": False, "message": "You are not signed in."}
-    elif status == database_helper.NO_SUCH_USER:
+    elif status == NO_SUCH_USER:
         return {"success": False, "message": "No such user."}
-    elif status == database_helper.WRONG_PASSWORD:
+    elif status == WRONG_PASSWORD:
         return {"success": False, "message": "Wrong password."}
-    elif status == database_helper.WRONG_USERNAME_PASSWORD:
+    elif status == WRONG_USERNAME_PASSWORD:
         return {"success": False, "message": "Wrong username or password."}
-    elif status == database_helper.USER_ALREADY_EXIST:
+    elif status == USER_ALREADY_EXIST:
         return {"success": False, "message": "User already exists."}
     else:
         raise ValueError
