@@ -6,7 +6,7 @@ from flask import Flask, g, request
 
 import database_helper
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="")
 
 SUCCESS = 1
 NO_SUCH_USER = 2
@@ -26,45 +26,50 @@ def teardown_request(exception):
     database_helper.close_db()
 
 
+@app.route('/')
+def home():
+    return app.send_static_file("client.html")
+
+
 @app.route('/signin', methods=['POST'])
 def sign_in_POST():
-    email = request.form['email']
-    password = request.form['password']
+    email = request.json['email']
+    password = request.json['password']
     return json.dumps(sign_in(email, password))
 
 
 @app.route('/signup', methods=['POST'])
 def sign_up_POST():
-    email = request.form['email']
-    password = request.form['password']
-    firstname = request.form['firstname']
-    familyname = request.form['familyname']
-    gender = request.form['gender']
-    city = request.form['city']
-    country = request.form['country']
+    email = request.json['email']
+    password = request.json['password']
+    firstname = request.json['firstname']
+    familyname = request.json['familyname']
+    gender = request.json['gender']
+    city = request.json['city']
+    country = request.json['country']
     return json.dumps(sign_up(email, password, firstname, familyname,
                               gender, city, country))
 
 
 @app.route('/signout', methods=['POST'])
 def sign_out_POST():
-    token = request.form["token"]
+    token = request.json["token"]
     return json.dumps(sign_out(token))
 
 
-@app.route('/changepw', methods=['POST'])
+@app.route('/changepassword', methods=['POST'])
 def change_password_POST():
-    token = request.form["token"]
-    old_password = request.form["oldpassword"]
-    new_password = request.form["newpassword"]
+    token = request.json["token"]
+    old_password = request.json["oldpassword"]
+    new_password = request.json["newpassword"]
     return json.dumps(change_password(token, old_password, new_password))
 
 
-@app.route('/postmsg', methods=['POST'])
+@app.route('/postmessage', methods=['POST'])
 def post_message_POST():
-    token = request.form["token"]
-    message = request.form["message"]
-    email = request.form["email"]
+    token = request.json["token"]
+    message = request.json["message"]
+    email = request.json["email"]
     return json.dumps(post_message(token, message, email))
 
 

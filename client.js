@@ -36,7 +36,23 @@ customSignOut = function() {
 }
 
 customSignIn = function(form) {
-    var result = serverstub.signIn(form.username.value, form.password.value);
+window.alertalert("customSignIn Begin");
+var xmlhttp = new XMLHttpRequest();
+
+xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        customSignInResponse(JSON.parse(xmlhttp.responseText));
+     }
+};
+
+xmlhttp.setRequestHeader("Content-Type", "application/json");
+
+xmlhttp.open("POST", '/signin', true);
+xmlhttp.send(JSON.stringify(form.serializeArray()));
+}
+
+customSignInResponse = function(result) {
+alert("customSignInResponse Begin");
     if (result.success) {
         localStorage.setItem("user_token", result.data);
         changeView("profile");
