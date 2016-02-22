@@ -39,7 +39,6 @@ xmlhttp.send(JSON.stringify(data));
 }
 
 customChangePasswordResponse = function(result) {
-    var result = serverstub.changePassword(localStorage.getItem("user_token"), form.oldpassword.value, form.newpassword.value);
     if(result.success){
     	form.oldpassword.setCustomValidity("");
     	form.reset();
@@ -105,9 +104,24 @@ customSignInResponse = function(result) {
     }
 };
 
-showHomePanel = function(){
-    var result = serverstub.getUserDataByToken(localStorage.getItem("user_token")).data;
-    localStorage.setItem("post_email", result.email);
+showHomePanelResponse = function(message_board) {
+var xmlhttp = new XMLHttpRequest();
+xmlhttp.open("GET", '/getuserdatabytoken/' +
+ localStorage.getItem("user_token"), true);
+
+xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    alert(xmlhttp.responseText);
+        showHomePanelResponse(JSON.parse(xmlhttp.responseText));
+     }
+};
+
+xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+xmlhttp.send(null);
+}
+
+showHomePanelResponse = function(result){
+    localStorage.setItem("post_email", result.data.email);
     showPanel("home");
     getInfo(result.email);
     getMessages(document.getElementById("message_board_self"));
