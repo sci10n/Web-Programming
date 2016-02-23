@@ -22,7 +22,6 @@ customChangePassword = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             customChangePasswordResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -39,6 +38,7 @@ customChangePassword = function (form) {
 };
 
 customChangePasswordResponse = function (result) {
+    var form = document.getElementById("accountform");
     if (result.success) {
         form.oldpassword.setCustomValidity("");
         form.reset();
@@ -54,7 +54,6 @@ customSignOut = function () {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             customSignOutResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -80,7 +79,6 @@ customSignIn = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             customSignInResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -104,14 +102,13 @@ customSignInResponse = function (result) {
     }
 };
 
-showHomePanelResponse = function (message_board) {
+showHomePanel = function (message_board) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", '/getuserdatabytoken/' +
         localStorage.getItem("user_token"), true);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             showHomePanelResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -123,7 +120,7 @@ showHomePanelResponse = function (message_board) {
 showHomePanelResponse = function (result) {
     localStorage.setItem("post_email", result.data.email);
     showPanel("home");
-    getInfo(result.email);
+    getInfo(result.data.email);
     getMessages(document.getElementById("message_board_self"));
 };
 
@@ -146,7 +143,6 @@ customSignUp = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             customSignUpResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -170,7 +166,7 @@ customSignUpResponse = function (result) {
     var form = document.getElementById("signupform");
     if (result.success) {
         form.email.setCustomValidity("");
-        form.clear();
+        form.reset();
     } else {
         form.email.setCustomValidity(result.message);
         form.email.checkValidity();
@@ -185,7 +181,6 @@ getMessages = function (message_board) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             getMessagesResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -195,6 +190,7 @@ getMessages = function (message_board) {
 };
 
 getMessagesResponse = function (result) {
+    var message_board = document.getElementById("message_board_self");
     message_board.value = "";
     if (result.success) {
         for (var i = result.data.length - 1; i >= 0; i--) {
@@ -204,9 +200,10 @@ getMessagesResponse = function (result) {
 };
 
 customSignUpResponse = function (result) {
+    var form = document.getElementById("signupform");
     if (result.success) {
         form.email.setCustomValidity("");
-        form.clear();
+        form.reset();
     } else {
         form.email.setCustomValidity(result.message);
         form.email.checkValidity();
@@ -220,7 +217,6 @@ getInfo = function (email) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             getInfoResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -248,7 +244,6 @@ browseOtherUser = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             browseOtherUserResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -275,7 +270,6 @@ customPostMessage = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            alert(xmlhttp.responseText);
             customPostMessageResponse(JSON.parse(xmlhttp.responseText));
         }
     };

@@ -3,7 +3,7 @@ import random
 import re
 
 from flask import Flask, g, request
-
+from gevent.wsgi import WSGIServer
 import database_helper
 
 app = Flask(__name__, static_url_path="")
@@ -219,24 +219,26 @@ def get_user_data_by_email(token, email):
 
 
 def get_user_data_by_email_helper(token, email):
-    if email and email == database_helper.get_email_from_token(token):
-        unprocessed_data = database_helper.get_user_data(email)
+    if user_exist(email):
 
-        if unprocessed_data:
-            data = \
-                {
-                    'email': unprocessed_data[0],
-                    'firstname': unprocessed_data[2],
-                    'familyname': unprocessed_data[3],
-                    'gender': unprocessed_data[4],
-                    'city': unprocessed_data[5],
-                    'country': unprocessed_data[6],
-                }
-            return SUCCESS, data
+        if user_exist(database_helper.get_email_from_token(token)):
+            unprocessed_data = database_helper.get_user_data(email)
 
-        return NO_SUCH_USER, None
+            if unprocessed_data:
+                data = \
+                    {
+                        'email': unprocessed_data[0],
+                        'firstname': unprocessed_data[2],
+                        'familyname': unprocessed_data[3],
+                        'gender': unprocessed_data[4],
+                        'city': unprocessed_data[5],
+                        'country': unprocessed_data[6],
+                    }
+                return SUCCESS, data
 
-    return NOT_SIGNED_IN, None
+        return NOT_SIGNED_IN, None
+
+    return NO_SUCH_USER, None
 
 
 def get_user_messages_by_token(token):
@@ -267,7 +269,7 @@ def get_user_messages_by_email_helper(token, email):
             return NO_SUCH_USER, None
 
         messages = database_helper.get_messages(email)
-        data = [{"writer": writer, "message": message} for writer, message in messages]
+        data = [{"writer": writer, "content": content} for writer, content in messages]
         return SUCCESS, data
 
     return NOT_SIGNED_IN, None
@@ -321,4 +323,6 @@ def get_status_translation(status):
 
 if __name__ == "__main__":
     database_helper.init_db()
-    app.run(debug=True)
+    http_server = WSGIServer(('', 5000), app)
+    http_server.serve_forever()
+

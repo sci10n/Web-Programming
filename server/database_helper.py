@@ -81,7 +81,7 @@ def get_email_from_token(token):
 def change_password(email, old_password, new_password):
     result = execute_query("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
                            [new_password, email, old_password], commit=True)
-
+    print(result)
     if result == 1:
         return True
 
