@@ -95,12 +95,27 @@ customSignIn = function (form) {
 
 customSignInResponse = function (result) {
     if (result.success) {
+        connectWebSocket(result.data);
         localStorage.setItem("user_token", result.data);
         changeView("profile");
     } else {
         document.getElementById("signinform").username.setCustomValidity(result.message);
     }
 };
+
+connectWebSocket = function (token) {
+    var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + token);
+
+    connection.onclose = function() {
+        connection.close();
+        localStorage.setItem("user_token", "");
+        changeView("welcome");
+    };
+
+    connection.onopen = function () {
+    };
+};
+
 
 showHomePanel = function (message_board) {
     var xmlhttp = new XMLHttpRequest();
@@ -302,6 +317,7 @@ changeView = function (name) {
 };
 
 init = function () {
+
     changeView("welcome");
 };
 

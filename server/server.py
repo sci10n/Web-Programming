@@ -2,8 +2,12 @@ import json
 import random
 import re
 
+import gevent
 from flask import Flask, g, request
-from gevent.wsgi import WSGIServer
+
+from gevent.pywsgi import WSGIServer
+from geventwebsocket.handler import WebSocketHandler
+
 import database_helper
 
 app = Flask(__name__, static_url_path="")
@@ -15,6 +19,7 @@ WRONG_PASSWORD = 4
 WRONG_USERNAME_PASSWORD = 5
 USER_ALREADY_EXIST = 6
 
+WEBSOCKETS = {}
 
 @app.before_request
 def before_request():
@@ -37,6 +42,20 @@ def sign_in_POST():
     password = request.json['password']
     return json.dumps(sign_in(email, password))
 
+
+@app.route('/signin/<token>')
+def sign_in_token_POST(token):
+    if request.environ.get("wsgi.websocket"):
+        email = database_helper.get_email_from_token(token)
+        if WEBSOCKETS.get(email):
+            WEBSOCKETS[email].close()
+
+        ws = request.environ.get("wsgi.websocket")
+        WEBSOCKETS[email] = ws
+        while ws.receive():
+            pass
+
+    return ""
 
 @app.route('/signup', methods=['POST'])
 def sign_up_POST():
@@ -91,6 +110,7 @@ def get_user_messages_by_token_GET(token):
 @app.route('/getusermessagesbyemail/<token>/<email>', methods=['GET'])
 def get_usr_messages_by_email_GET(token, email):
     return json.dumps(get_user_messages_by_email(token, email))
+
 
 
 def sign_in(email, password):
@@ -323,6 +343,6 @@ def get_status_translation(status):
 
 if __name__ == "__main__":
     database_helper.init_db()
-    http_server = WSGIServer(('', 5000), app)
+    app.debug = True
+    http_server = WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
     http_server.serve_forever()
-
