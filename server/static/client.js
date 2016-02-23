@@ -106,7 +106,7 @@ customSignInResponse = function (result) {
 connectWebSocket = function (token) {
     var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + token);
 
-    connection.onclose = function() {
+    connection.onclose = function () {
         connection.close();
         localStorage.setItem("user_token", "");
         changeView("welcome");
@@ -317,7 +317,6 @@ changeView = function (name) {
 };
 
 init = function () {
-
     changeView("welcome");
 };
 

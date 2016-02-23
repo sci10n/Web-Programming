@@ -2,9 +2,7 @@ import json
 import random
 import re
 
-import gevent
 from flask import Flask, g, request
-
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 
