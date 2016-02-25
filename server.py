@@ -148,7 +148,7 @@ def sign_up(email, password, repassword,
             firstname, familyname, gender, city,
             country):
     if not valid_email(email) or not valid_password(password) or \
-            not matching_password(password, repassword):
+            not matching_passwords(password, repassword):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
     status = sign_up_helper(email=email, password=password,
@@ -178,7 +178,7 @@ def valid_password(password):
     return len(password) > 7
 
 
-def matching_password(p1, p2):
+def matching_passwords(p1, p2):
     return p1 == p2
 
 

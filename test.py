@@ -31,6 +31,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
                                          email="kalle@anka.borg",
                                          password="ankeborg",
                                          repassword="ankeborg"))
+
         self.assertFalse(self.signup_user(firstname="Kalle",
                                           lastname="Anka",
                                           gender=MALE,
