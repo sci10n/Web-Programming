@@ -22,7 +22,6 @@ class TwiddlerWelcomeView(unittest.TestCase):
         self.driver.close()
 
     def test_double_signup(self):
-
         self.assertTrue(self.signup_user(firstname="Kalle",
                                          lastname="Anka",
                                          gender=MALE,
@@ -41,10 +40,11 @@ class TwiddlerWelcomeView(unittest.TestCase):
                                           password="ankeborg",
                                           repassword="ankeborg"))
 
-    def test_signin(self):
+    def test_signin_with_nonexisting_user(self):
         self.assertFalse(self.signin_user(username="kalle@anka.borg",
                                           password="ankeborg"))
 
+    def test_signin_with_existing_user(self):
         self.assertTrue(self.signup_user(firstname="Kalle",
                                          lastname="Anka",
                                          gender=MALE,
@@ -57,7 +57,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
         self.assertTrue(self.signin_user(username="kalle@anka.borg",
                                          password="ankeborg"))
 
-    def test_invalid_password(self):
+    def test_signup_with_invalid_password(self):
         self.assertFalse(self.signup_user(firstname="Kalle",
                                           lastname="Anka",
                                           gender=MALE,
@@ -67,7 +67,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
                                           password="ankebor",
                                           repassword="ankebor"))
 
-    def test_invalid_email(self):
+    def test_signup_with_invalid_email(self):
         self.assertFalse(self.signup_user(firstname="Kalle",
                                           lastname="Anka",
                                           gender=MALE,
@@ -77,7 +77,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
                                           password="ankeborg",
                                           repassword="ankeborg"))
 
-    def test_mismatching_passwords(self):
+    def test_signup_with_mismatching_passwords(self):
         self.assertFalse(self.signup_user(firstname="Kalle",
                                           lastname="Anka",
                                           gender=FEMALE,
