@@ -19,6 +19,7 @@ USER_ALREADY_EXIST = 6
 
 WEBSOCKETS = {}
 
+
 @app.before_request
 def before_request():
     g.db = database_helper.connect_db()
@@ -55,16 +56,19 @@ def sign_in_token_POST(token):
 
     return ""
 
+
 @app.route('/signup', methods=['POST'])
 def sign_up_POST():
     email = request.json['email']
     password = request.json['password']
+    repassword = request.json['repassword']
     firstname = request.json['firstname']
     familyname = request.json['familyname']
     gender = request.json['gender']
     city = request.json['city']
     country = request.json['country']
-    return json.dumps(sign_up(email, password, firstname, familyname,
+    return json.dumps(sign_up(email, password, repassword,
+                              firstname, familyname,
                               gender, city, country))
 
 
@@ -110,7 +114,6 @@ def get_usr_messages_by_email_GET(token, email):
     return json.dumps(get_user_messages_by_email(token, email))
 
 
-
 def sign_in(email, password):
     status, token = sign_in_helper(email, password)
 
@@ -141,10 +144,11 @@ def generate_token():
     return token
 
 
-def sign_up(email, password, firstname,
-            familyname, gender, city,
+def sign_up(email, password, repassword,
+            firstname, familyname, gender, city,
             country):
-    if not valid_email(email) or not valid_password(password):
+    if not valid_email(email) or not valid_password(password) or \
+            not matching_password(password, repassword):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
     status = sign_up_helper(email=email, password=password,
@@ -172,6 +176,10 @@ def valid_email(email):
 
 def valid_password(password):
     return len(password) > 7
+
+
+def matching_password(p1, p2):
+    return p1 == p2
 
 
 def sign_out(token):

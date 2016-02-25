@@ -21,6 +21,71 @@ class TwiddlerWelcomeView(unittest.TestCase):
     def tearDown(self):
         self.driver.close()
 
+    def test_double_signup(self):
+
+        self.assertTrue(self.signup_user(firstname="Kalle",
+                                         lastname="Anka",
+                                         gender=MALE,
+                                         city="AnkeBorg",
+                                         country="USA",
+                                         email="kalle@anka.borg",
+                                         password="ankeborg",
+                                         repassword="ankeborg"))
+        self.assertFalse(self.signup_user(firstname="Kalle",
+                                          lastname="Anka",
+                                          gender=MALE,
+                                          city="AnkeBorg",
+                                          country="USA",
+                                          email="kalle@anka.borg",
+                                          password="ankeborg",
+                                          repassword="ankeborg"))
+
+    def test_signin(self):
+        self.assertFalse(self.signin_user(username="kalle@anka.borg",
+                                          password="ankeborg"))
+
+        self.assertTrue(self.signup_user(firstname="Kalle",
+                                         lastname="Anka",
+                                         gender=MALE,
+                                         city="AnkeBorg",
+                                         country="USA",
+                                         email="kalle@anka.borg",
+                                         password="ankeborg",
+                                         repassword="ankeborg"))
+
+        self.assertTrue(self.signin_user(username="kalle@anka.borg",
+                                         password="ankeborg"))
+
+    def test_invalid_password(self):
+        self.assertFalse(self.signup_user(firstname="Kalle",
+                                          lastname="Anka",
+                                          gender=MALE,
+                                          city="AnkeBorg",
+                                          country="USA",
+                                          email="kalle@anka.borg",
+                                          password="ankebor",
+                                          repassword="ankebor"))
+
+    def test_invalid_email(self):
+        self.assertFalse(self.signup_user(firstname="Kalle",
+                                          lastname="Anka",
+                                          gender=MALE,
+                                          city="AnkeBorg",
+                                          country="USA",
+                                          email="kalle@anka",
+                                          password="ankeborg",
+                                          repassword="ankeborg"))
+
+    def test_mismatching_passwords(self):
+        self.assertFalse(self.signup_user(firstname="Kalle",
+                                          lastname="Anka",
+                                          gender=FEMALE,
+                                          city="AnkeBorg",
+                                          country="USA",
+                                          email="kalle@anka.borg",
+                                          password="ankeborg",
+                                          repassword="ankeborgare"))
+
     def signup_user(self, firstname, lastname, gender,
                     city, country, email,
                     password, repassword):
@@ -61,49 +126,30 @@ class TwiddlerWelcomeView(unittest.TestCase):
 
         time.sleep(1)
 
-    def signin_user(self, username, password):
-        driver = self.driver
+        return self.signup_status()
 
-        content = driver.find_element_by_id("content")
+    def signup_status(self):
+        email = self.driver.find_element_by_id("signupform").find_element_by_id("email")
+        return email.get_attribute('value').encode('utf-8') == ""
+
+    def signin_user(self, username, password):
+        content = self.driver.find_element_by_id("content")
         signin_form = content.find_element_by_id("signinform")
 
-        username = signin_form.find_element_by_id("username")
-        username.clear()
-        username.send_keys(username)
+        username_input = signin_form.find_element_by_id("username")
+        username_input.clear()
+        username_input.send_keys(username)
 
-        password = signin_form.find_element_by_id("password")
-        password.clear()
-        password.send_keys(password)
-        password.submit()
+        password_input = signin_form.find_element_by_id("password")
+        password_input.clear()
+        password_input.send_keys(password)
+        password_input.submit()
 
         time.sleep(1)
 
-    def test_signup(self):
-        self.signup_user(firstname="Kalle",
-                         lastname="Anka",
-                         gender=MALE,
-                         city="AnkeBorg",
-                         country="USA",
-                         email="kalle@anka.borg",
-                         password="ankeborg",
-                         repassword="ankeborg")
+        return self.signin_status()
 
-        email = self.driver.find_element_by_id("signupform").find_element_by_id("email")
-
-        self.assertEqual(email.get_attribute('value').encode('utf-8'), "")
-
-        self.signup_user(firstname="Kalle",
-                         lastname="Anka",
-                         gender=MALE,
-                         city="AnkeBorg",
-                         country="USA",
-                         email="kalle@anka.borg",
-                         password="ankeborg",
-                         repassword="ankeborg")
-
-        self.assertNotEqual(email.get_attribute('value').encode('utf-8'), "")
-
-    def signin_successful(self):
+    def signin_status(self):
         success = False
 
         try:
@@ -112,52 +158,6 @@ class TwiddlerWelcomeView(unittest.TestCase):
             success = True
 
         return success
-
-    def test_signin(self):
-        self.signin_user(username="kalle@anka.borg",
-                         password="ankeborg")
-        self.assertFalse(self.signin_successful())
-
-        self.signup_user(firstname="Kalle",
-                         lastname="Anka",
-                         gender=MALE,
-                         city="AnkeBorg",
-                         country="USA",
-                         email="kalle@anka.borg",
-                         password="ankeborg",
-                         repassword="ankeborg")
-
-        self.signin_user(username="kalle@anka.borg",
-                         password="ankeborg")
-        self.assertTrue(self.signin_successful())
-
-    def test_valid_password(self):
-        self.signup_user(firstname="Kalle",
-                         lastname="Anka",
-                         gender=MALE,
-                         city="AnkeBorg",
-                         country="USA",
-                         email="kalle@anka.borg",
-                         password="ankebor",
-                         repassword="ankebor")
-
-        password = self.driver.find_element_by_id("signupform").find_element_by_id("password")
-
-        self.assertNotEqual(password.get_attribute('value').encode('utf-8'), "")
-
-    def test_valid_email(self):
-        self.signup_user(firstname="Kalle",
-                         lastname="Anka",
-                         gender=MALE,
-                         city="AnkeBorg",
-                         country="USA",
-                         email="kalle@anka",
-                         password="ankebor",
-                         repassword="ankebor")
-
-        email = self.driver.find_element_by_id("signupform").find_element_by_id("email")
-
-        self.assertNotEqual(email.get_attribute('value').encode('utf-8'), "")
 
 
 if __name__ == "__main__":

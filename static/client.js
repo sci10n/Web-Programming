@@ -4,7 +4,6 @@ validatePassword = function (password) {
     } else {
         password.setCustomValidity("");
     }
-    password.checkValidity();
 };
 
 matchingPasswords = function (password, repassword) {
@@ -13,7 +12,6 @@ matchingPasswords = function (password, repassword) {
     } else {
         repassword.setCustomValidity("");
     }
-    repassword.checkValidity();
 };
 
 customChangePassword = function (form) {
@@ -167,6 +165,7 @@ customSignUp = function (form) {
     var data = {
         email: form.email.value,
         password: form.password.value,
+        repassword: form.repassword.value,
         firstname: form.firstname.value,
         familyname: form.lastname.value,
         gender: form.gender.value,
@@ -184,7 +183,6 @@ customSignUpResponse = function (result) {
         form.reset();
     } else {
         form.email.setCustomValidity(result.message);
-        form.email.checkValidity();
     }
 };
 
@@ -221,7 +219,6 @@ customSignUpResponse = function (result) {
         form.reset();
     } else {
         form.email.setCustomValidity(result.message);
-        form.email.checkValidity();
     }
 };
 
