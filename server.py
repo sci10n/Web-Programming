@@ -1,6 +1,7 @@
 import json
 import random
 import re
+import hashlib
 
 from flask import Flask, g, request
 from flask.ext.bcrypt import Bcrypt
@@ -101,9 +102,24 @@ def get_user_data_by_token_GET(token):
     return json.dumps(get_user_data_by_token(token))
 
 
-@app.route('/getuserdatabyemail/<token>/<email>', methods=['GET'])
-def get_user_data_by_email_GET(token, email):
+@app.route('/getuserdatabyemail/<token>/<email>/<hashed_data>', methods=['GET'])
+def get_user_data_by_email_GET(token, email, hashed_data):
+    print(correct_hashed_data("getuserdatabyemail", email, hashed_data))
+
     return json.dumps(get_user_data_by_email(token, email))
+
+
+def correct_hashed_data(route, email, client_hash):
+
+    if not user_exist(email) or not user_logged_in(email):
+        return False
+
+    token = database_helper.get_token_from_email(email)
+
+    data_to_hash = "/" + route + "/" + token + "/" + email
+
+    return client_hash == hashlib.sha256(data_to_hash).hexdigest()
+
 
 
 @app.route('/getusermessagesbytoken/<token>', methods=['GET'])
@@ -320,6 +336,13 @@ def get_user_messages_by_email_helper(token, email):
 
 def user_exist(email):
     if database_helper.get_user_data(email):
+        return True
+
+    return False
+
+
+def user_logged_in(email):
+    if database_helper.get_token_from_email(email) is not None:
         return True
 
     return False

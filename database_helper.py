@@ -35,6 +35,16 @@ def get_password_hash(email):
     return None
 
 
+def get_token_from_email(email):
+    result = execute_query("""SELECT * FROM UserTokens WHERE email = ?""",
+                           [email])
+
+    if result:
+        return result[0][1]
+
+    return None
+
+
 def insert_token(email, token):
     result = execute_query("""INSERT INTO UserTokens (email, token)
                               VALUES (?, ?)""",

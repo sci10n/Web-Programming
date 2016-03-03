@@ -224,8 +224,11 @@ customSignUpResponse = function (result) {
 
 getInfo = function (email) {
     var xmlhttp = new XMLHttpRequest();
+    var hashed_data = CryptoJS.SHA256('/getuserdatabyemail/' +
+        localStorage.getItem("user_token") + '/' + email);
+
     xmlhttp.open("GET", '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email, true);
+        localStorage.getItem("user_token") + '/' + email + '/' + hashed_data, true);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
