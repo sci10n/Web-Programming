@@ -204,6 +204,9 @@ def sign_out(token):
 
 
 def sign_out_helper(token):
+    email = database_helper.get_email_from_token(token)
+    WEBSOCKETS[email].close()
+
     if database_helper.sign_out(token):
         return SUCCESS
 

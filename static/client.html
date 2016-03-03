@@ -2,7 +2,6 @@
 	<head>
 		<link href="client.css" type="text/css" rel="stylesheet">
 		<script src="client.js" type="text/javascript"></script>
-		<script src="serverstub.js" type="text/javascript"></script>
 	</head>
 	<body>
 		<script type="text/view" id="welcomeview">
@@ -106,7 +105,7 @@
 						<div class="row"><textarea class="post_field" id="message" name="message" required></textarea></div>
 						<div class="row">
 								<button type="submit" value="button_post_message" id="button_post_message" name="button_post_message">Post Message</button>
-								<button type="button" value="button_refresh" id="button_refresh" name="button_refresh" onclick="getMessages(message_board_self)">Refresh</button>
+								<button type="button" value="button_refresh" id="button_refresh" name="button_refresh" onclick="getMessages()">Refresh</button>
 						</div>	
 					</form>
 					</div>

@@ -77,7 +77,6 @@ customSignIn = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        alert(xmlhttp.responseText)
             customSignInResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -116,7 +115,7 @@ connectWebSocket = function (token) {
 };
 
 
-showHomePanel = function (message_board) {
+showHomePanel = function () {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", '/getuserdatabytoken/' +
         localStorage.getItem("user_token"), true);
@@ -135,7 +134,7 @@ showHomePanelResponse = function (result) {
     localStorage.setItem("post_email", result.data.email);
     showPanel("home");
     getInfo(result.data.email);
-    getMessages(document.getElementById("message_board_self"));
+    getMessages();
 };
 
 showPanel = function (name) {
@@ -187,7 +186,7 @@ customSignUpResponse = function (result) {
     }
 };
 
-getMessages = function (message_board) {
+getMessages = function () {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", '/getusermessagesbyemail/' +
         localStorage.getItem("user_token") + '/' +
@@ -195,7 +194,6 @@ getMessages = function (message_board) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        alert(xmlhttp.responseText)
             getMessagesResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -206,7 +204,6 @@ getMessages = function (message_board) {
 
 getMessagesResponse = function (result) {
     var message_board = document.getElementById("message_board_self");
-    alert(message_board)
     message_board.value = "";
     if (result.success) {
         for (var i = result.data.length - 1; i >= 0; i--) {
@@ -272,7 +269,7 @@ browseOtherUserResponse = function (result) {
     if (result.success) {
         showPanel("home");
         getInfo(localStorage.getItem("post_email"));
-        getMessages(message_board_self);
+        getMessages();
         form.reset();
     } else {
         form.email.setCustomValidity(result.message);
@@ -302,7 +299,7 @@ customPostMessage = function (form) {
 
 customPostMessageResponse = function (result) {
     if (result.success) {
-        getMessages(document.getElementById("message_board_self"));
+        getMessages();
         document.getElementById("postMessageForm").reset();
     }
 };
