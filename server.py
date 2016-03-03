@@ -3,12 +3,14 @@ import random
 import re
 
 from flask import Flask, g, request
+from flask.ext.bcrypt import Bcrypt
 from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 
 import database_helper
 
 app = Flask(__name__, static_url_path="")
+bcrypt = Bcrypt(app)
 
 SUCCESS = 1
 NO_SUCH_USER = 2
@@ -124,7 +126,7 @@ def sign_in(email, password):
 
 
 def sign_in_helper(email, password):
-    if not database_helper.sign_in(email, password):
+    if not correct_password(email, password):
         return WRONG_USERNAME_PASSWORD, None
 
     token = generate_token()
@@ -132,6 +134,15 @@ def sign_in_helper(email, password):
         token = generate_token()
 
     return SUCCESS, token
+
+
+def correct_password(email, password):
+    password_hash = database_helper.get_password_hash(email)
+
+    if password_hash is None:
+        return False
+
+    return bcrypt.check_password_hash(password_hash, password)
 
 
 def generate_token():
@@ -151,7 +162,8 @@ def sign_up(email, password, repassword,
             not matching_passwords(password, repassword):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
-    status = sign_up_helper(email=email, password=password,
+    password_hash = bcrypt.generate_password_hash(password)
+    status = sign_up_helper(email=email, password=password_hash,
                             firstname=firstname, familyname=familyname,
                             gender=gender, city=city, country=country)
 
@@ -214,7 +226,9 @@ def change_password_helper(token, old_password, new_password):
     email = database_helper.get_email_from_token(token)
 
     if email:
-        if database_helper.change_password(email, old_password, new_password):
+        if correct_password(email, old_password) and \
+                database_helper.change_password(email,
+                                                bcrypt.generate_password_hash(new_password)):
             return SUCCESS
         else:
             return WRONG_PASSWORD

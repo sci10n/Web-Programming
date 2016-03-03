@@ -25,14 +25,14 @@ def close_db():
         g.db.close()
 
 
-def sign_in(email, password):
-    result = execute_query("""SELECT * FROM Users WHERE email = ? AND password = ?""",
-                           [email, password])
+def get_password_hash(email):
+    result = execute_query("""SELECT * FROM Users WHERE email = ?""",
+                           [email])
 
     if result:
-        return True
+        return result[0][1]
 
-    return False
+    return None
 
 
 def insert_token(email, token):
@@ -78,9 +78,9 @@ def get_email_from_token(token):
     return ""
 
 
-def change_password(email, old_password, new_password):
-    result = execute_query("""UPDATE Users SET password = ? WHERE email = ? AND password = ?""",
-                           [new_password, email, old_password], commit=True)
+def change_password(email, new_password):
+    result = execute_query("""UPDATE Users SET password = ? WHERE email = ?""",
+                           [new_password, email], commit=True)
 
     if result == 1:
         return True

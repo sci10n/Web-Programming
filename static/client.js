@@ -77,6 +77,7 @@ customSignIn = function (form) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert(xmlhttp.responseText)
             customSignInResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -194,6 +195,7 @@ getMessages = function (message_board) {
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert(xmlhttp.responseText)
             getMessagesResponse(JSON.parse(xmlhttp.responseText));
         }
     };
@@ -204,6 +206,7 @@ getMessages = function (message_board) {
 
 getMessagesResponse = function (result) {
     var message_board = document.getElementById("message_board_self");
+    alert(message_board)
     message_board.value = "";
     if (result.success) {
         for (var i = result.data.length - 1; i >= 0; i--) {
