@@ -145,11 +145,10 @@ customPostMessageResponse = function (result) {
     }
 };
 
-
 showHomePanel = function () {
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", '/getuserdatabytoken/' +
-        localStorage.getItem("user_token"), true);
+    var hashed_data = CryptoJS.SHA256('/getuserdatabytoken/' +
+        localStorage.getItem("user_token"));
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -157,8 +156,8 @@ showHomePanel = function () {
         }
     };
 
-    xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-    xmlhttp.send(null);
+    sendGETRequest(xmlhttp, '/getuserdatabytoken/' +
+        localStorage.getItem("user_token") + '/' + hashed_data);
 };
 
 showHomePanelResponse = function (result) {
@@ -168,26 +167,36 @@ showHomePanelResponse = function (result) {
     getMessages();
 };
 
-showPanel = function (name) {
-    homePanel.style.display = "none";
-    browsePanel.style.display = "none";
-    accountPanel.style.display = "none";
-    if (name === "home") {
-        homePanel.style.display = "block";
-    } else if (name === "browse") {
-        browsePanel.style.display = "block";
-    } else if (name === "account") {
-        accountPanel.style.display = "block";
-    }
+getInfo = function (email) {
+    var xmlhttp = new XMLHttpRequest();
+    var hashed_data = CryptoJS.SHA256('/getuserdatabyemail/' +
+        localStorage.getItem("user_token") + '/' + email);
+
+    xmlhttp.onreadystatechange = function () {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            getInfoResponse(JSON.parse(xmlhttp.responseText));
+        }
+    };
+
+    sendGETRequest(xmlhttp, '/getuserdatabyemail/' +
+        localStorage.getItem("user_token") + '/' + email + '/' + hashed_data)
 };
 
-
+getInfoResponse = function (result) {
+    document.getElementById("firstname").innerHTML = result.data.firstname;
+    document.getElementById("lastname").innerHTML = result.data.familyname;
+    document.getElementById("email").innerHTML = result.data.email;
+    document.getElementById("city").innerHTML = result.data.city;
+    document.getElementById("country").innerHTML = result.data.country;
+    document.getElementById("gender").innerHTML = result.data.gender;
+};
 
 getMessages = function () {
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", '/getusermessagesbyemail/' +
+
+    var hashed_data = CryptoJS.SHA256('/getusermessagesbyemail/' +
         localStorage.getItem("user_token") + '/' +
-        localStorage.getItem("post_email"), true);
+        localStorage.getItem("post_email"));
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -195,8 +204,9 @@ getMessages = function () {
         }
     };
 
-    xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-    xmlhttp.send(null);
+    sendGETRequest(xmlhttp, '/getusermessagesbyemail/' +
+        localStorage.getItem("user_token") + '/' +
+        localStorage.getItem("post_email") + '/' + hashed_data);
 };
 
 getMessagesResponse = function (result) {
@@ -209,42 +219,14 @@ getMessagesResponse = function (result) {
     }
 };
 
-
-
-getInfo = function (email) {
-    var xmlhttp = new XMLHttpRequest();
-    var hashed_data = CryptoJS.SHA256('/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email);
-
-    xmlhttp.open("GET", '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email + '/' + hashed_data, true);
-
-    xmlhttp.onreadystatechange = function () {
-        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            getInfoResponse(JSON.parse(xmlhttp.responseText));
-        }
-    };
-
-    xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-    xmlhttp.send(null);
-};
-
-getInfoResponse = function (result) {
-    document.getElementById("firstname").innerHTML = result.data.firstname;
-    document.getElementById("lastname").innerHTML = result.data.familyname;
-    document.getElementById("email").innerHTML = result.data.email;
-    document.getElementById("city").innerHTML = result.data.city;
-    document.getElementById("country").innerHTML = result.data.country;
-    document.getElementById("gender").innerHTML = result.data.gender;
-};
-
 browseOtherUser = function (form) {
     var email = form.email.value;
     localStorage.setItem("post_email", email);
 
     var xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email, true);
+
+    var hashed_data = CryptoJS.SHA256('/getuserdatabyemail/' +
+        localStorage.getItem("user_token") + '/' + email);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -252,8 +234,9 @@ browseOtherUser = function (form) {
         }
     };
 
-    xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
-    xmlhttp.send(null);
+    sendGETRequest(xmlhttp, '/getuserdatabyemail/' +
+        localStorage.getItem("user_token") + '/' + email +
+        '/' + hashed_data);
 };
 
 browseOtherUserResponse = function (result) {
@@ -267,8 +250,6 @@ browseOtherUserResponse = function (result) {
         form.email.setCustomValidity(result.message);
     }
 };
-
-
 
 validatePassword = function (password) {
     if (password.value.length < 8) {
@@ -317,6 +298,19 @@ changeView = function (name) {
     } else if (name == "profile") {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
         showHomePanel();
+    }
+};
+
+showPanel = function (name) {
+    homePanel.style.display = "none";
+    browsePanel.style.display = "none";
+    accountPanel.style.display = "none";
+    if (name === "home") {
+        homePanel.style.display = "block";
+    } else if (name === "browse") {
+        browsePanel.style.display = "block";
+    } else if (name === "account") {
+        accountPanel.style.display = "block";
     }
 };
 

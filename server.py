@@ -1,4 +1,3 @@
-import hashlib
 import json
 import random
 import re
@@ -9,6 +8,7 @@ from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 
 import database_helper
+from security import HashInfo, correct_hashed_data
 
 app = Flask(__name__, static_url_path="")
 bcrypt = Bcrypt(app)
@@ -19,16 +19,10 @@ NOT_SIGNED_IN = 3
 WRONG_PASSWORD = 4
 WRONG_USERNAME_PASSWORD = 5
 USER_ALREADY_EXIST = 6
+CORRUPT_DATA = 7
+INVALID_DATA = 8
 
 WEBSOCKETS = {}
-
-
-class HashInfo(object):
-    def __init__(self, route, data, hash, token=None):
-        self.route = route
-        self.data = data
-        self.hash = hash
-        self.token = token
 
 
 @app.before_request
@@ -51,7 +45,9 @@ def sign_in_POST(client_hash):
     email = request.json['email']
     password = request.json['password']
     return json.dumps(sign_in(email, password,
-                              HashInfo("signin", request.get_json(), client_hash)))
+                              HashInfo(route="signin",
+                                       data=request.get_json(),
+                                       hash=client_hash)))
 
 
 @app.route('/signin/<token>')
@@ -82,14 +78,18 @@ def sign_up_POST(client_hash):
     return json.dumps(sign_up(email, password, repassword,
                               firstname, familyname,
                               gender, city, country,
-                              HashInfo("signup", request.get_json(), client_hash)))
+                              HashInfo(route="signup",
+                                       data=request.get_json(),
+                                       hash=client_hash)))
 
 
 @app.route('/signout/<client_hash>', methods=['POST'])
 def sign_out_POST(client_hash):
     token = request.json["token"]
     return json.dumps(sign_out(token,
-                               HashInfo("signout", request.get_json(), client_hash)))
+                               HashInfo(route="signout",
+                                        data=request.get_json(),
+                                        hash=client_hash)))
 
 
 @app.route('/changepassword/<client_hash>', methods=['POST'])
@@ -98,7 +98,9 @@ def change_password_POST(client_hash):
     old_password = request.json["oldpassword"]
     new_password = request.json["newpassword"]
     return json.dumps(change_password(token, old_password, new_password,
-                                      HashInfo("changepassword", request.get_json(), client_hash)))
+                                      HashInfo(route="changepassword",
+                                               data=request.get_json(),
+                                               hash=client_hash)))
 
 
 @app.route('/postmessage/<client_hash>', methods=['POST'])
@@ -107,27 +109,43 @@ def post_message_POST(client_hash):
     message = request.json["message"]
     email = request.json["email"]
     return json.dumps(post_message(token, message, email,
-                                   HashInfo("postmessage", request.get_json(), client_hash)))
+                                   HashInfo(route="postmessage",
+                                            data=request.get_json(),
+                                            hash=client_hash)))
 
 
-@app.route('/getuserdatabytoken/<token>', methods=['GET'])
-def get_user_data_by_token_GET(token):
-    return json.dumps(get_user_data_by_token(token))
+@app.route('/getuserdatabytoken/<token>/<client_hash>', methods=['GET'])
+def get_user_data_by_token_GET(token, client_hash):
+    return json.dumps(get_user_data_by_token(token,
+                                             HashInfo(route="getuserdatabytoken",
+                                                      hash=client_hash,
+                                                      token=token)))
 
 
-@app.route('/getuserdatabyemail/<token>/<email>', methods=['GET'])
-def get_user_data_by_email_GET(token, email):
-    return json.dumps(get_user_data_by_email(token, email))
+@app.route('/getuserdatabyemail/<token>/<email>/<client_hash>', methods=['GET'])
+def get_user_data_by_email_GET(token, email, client_hash):
+    return json.dumps(get_user_data_by_email(token, email,
+                                             HashInfo(route="getuserdatabyemail",
+                                                      hash=client_hash,
+                                                      token=token,
+                                                      email=email)))
 
 
-@app.route('/getusermessagesbytoken/<token>', methods=['GET'])
-def get_user_messages_by_token_GET(token):
-    return json.dumps(get_user_messages_by_token(token))
+@app.route('/getusermessagesbytoken/<token>/<client_hash>', methods=['GET'])
+def get_user_messages_by_token_GET(token, client_hash):
+    return json.dumps(get_user_messages_by_token(token,
+                                                 HashInfo(route="getusermessagesbytoken",
+                                                          hash=client_hash,
+                                                          token=token)))
 
 
-@app.route('/getusermessagesbyemail/<token>/<email>', methods=['GET'])
-def get_usr_messages_by_email_GET(token, email):
-    return json.dumps(get_user_messages_by_email(token, email))
+@app.route('/getusermessagesbyemail/<token>/<email>/<client_hash>', methods=['GET'])
+def get_usr_messages_by_email_GET(token, email, client_hash):
+    return json.dumps(get_user_messages_by_email(token, email,
+                                                 HashInfo(route="getusermessagesbyemail",
+                                                          hash=client_hash,
+                                                          token=token,
+                                                          email=email)))
 
 
 def sign_in(email, password, hash_info):
@@ -140,7 +158,10 @@ def sign_in(email, password, hash_info):
 
 
 def sign_in_helper(email, password, hash_info):
-    if not correct_hashed_data(hash_info) or not correct_password(email, password):
+    if not correct_hashed_data(hash_info):
+        return CORRUPT_DATA, None
+
+    if not correct_password(email, password):
         return WRONG_USERNAME_PASSWORD, None
 
     token = generate_token()
@@ -172,15 +193,17 @@ def generate_token():
 def sign_up(email, password, repassword,
             firstname, familyname, gender, city,
             country, hash_info):
+    if not correct_hashed_data(hash_info):
+        return get_status_translation(CORRUPT_DATA)
+
     if not valid_email(email) or not valid_password(password) or \
             not matching_passwords(password, repassword):
-        return {"success": False, "message": "Form data missing or incorrect type."}
+        return get_status_translation(INVALID_DATA)
 
     password_hash = bcrypt.generate_password_hash(password)
     status = sign_up_helper(email=email, password=password_hash,
                             firstname=firstname, familyname=familyname,
-                            gender=gender, city=city, country=country,
-                            hash_info=hash_info)
+                            gender=gender, city=city, country=country)
 
     if success(status):
         return {"success": True, "message": "Successfully created a new user."}
@@ -190,10 +213,9 @@ def sign_up(email, password, repassword,
 
 def sign_up_helper(email, password, firstname,
                    familyname, gender, city,
-                   country, hash_info):
-    if correct_hashed_data(hash_info) and \
-            database_helper.sign_up(email, password, firstname, familyname,
-                                    gender, city, country):
+                   country):
+    if database_helper.sign_up(email, password, firstname, familyname,
+                               gender, city, country):
         return SUCCESS
 
     return USER_ALREADY_EXIST
@@ -221,21 +243,25 @@ def sign_out(token, hash_info):
 
 
 def sign_out_helper(token, hash_info):
-    email = database_helper.get_email_from_token(token)
-    WEBSOCKETS[email].close()
+    if not correct_hashed_data(hash_info):
+        return CORRUPT_DATA
 
-    if correct_hashed_data(hash_info) and \
-            database_helper.sign_out(token):
+    email = database_helper.get_email_from_token(token)
+    if database_helper.sign_out(token):
+        WEBSOCKETS[email].close()
         return SUCCESS
 
     return NOT_SIGNED_IN
 
 
 def change_password(token, old_password, new_password, hash_info):
-    if not valid_password(new_password):
-        return {"success": False, "message": "Form data missing or incorrect type."}
+    if not correct_hashed_data(hash_info):
+        return get_status_translation(CORRUPT_DATA)
 
-    status = change_password_helper(token, old_password, new_password, hash_info)
+    if not valid_password(new_password):
+        return get_status_translation(INVALID_DATA)
+
+    status = change_password_helper(token, old_password, new_password)
 
     if success(status):
         return {"success": True, "message": "Password changed."}
@@ -243,10 +269,10 @@ def change_password(token, old_password, new_password, hash_info):
     return get_status_translation(status)
 
 
-def change_password_helper(token, old_password, new_password, hash_info):
+def change_password_helper(token, old_password, new_password):
     email = database_helper.get_email_from_token(token)
 
-    if correct_hashed_data(hash_info) and email:
+    if email:
         if correct_password(email, old_password) and \
                 database_helper.change_password(email,
                                                 bcrypt.generate_password_hash(new_password)):
@@ -257,8 +283,8 @@ def change_password_helper(token, old_password, new_password, hash_info):
     return NOT_SIGNED_IN
 
 
-def get_user_data_by_token(token):
-    status, data = get_user_data_by_token_helper(token)
+def get_user_data_by_token(token, hash_info):
+    status, data = get_user_data_by_token_helper(token, hash_info)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
@@ -266,12 +292,13 @@ def get_user_data_by_token(token):
     return get_status_translation(status)
 
 
-def get_user_data_by_token_helper(token):
-    return get_user_data_by_email_helper(token, database_helper.get_email_from_token(token))
+def get_user_data_by_token_helper(token, hash_info):
+    return get_user_data_by_email_helper(token, database_helper.get_email_from_token(token),
+                                         hash_info)
 
 
-def get_user_data_by_email(token, email):
-    status, data = get_user_data_by_email_helper(token, email)
+def get_user_data_by_email(token, email, hash_info):
+    status, data = get_user_data_by_email_helper(token, email, hash_info)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
@@ -279,7 +306,10 @@ def get_user_data_by_email(token, email):
     return get_status_translation(status)
 
 
-def get_user_data_by_email_helper(token, email):
+def get_user_data_by_email_helper(token, email, hash_info):
+    if not correct_hashed_data(hash_info):
+        return CORRUPT_DATA, None
+
     if user_exist(email):
 
         if user_exist(database_helper.get_email_from_token(token)):
@@ -302,8 +332,8 @@ def get_user_data_by_email_helper(token, email):
     return NO_SUCH_USER, None
 
 
-def get_user_messages_by_token(token):
-    status, data = get_user_messages_by_token_helper(token)
+def get_user_messages_by_token(token, hash_info):
+    status, data = get_user_messages_by_token_helper(token, hash_info)
 
     if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
@@ -311,12 +341,13 @@ def get_user_messages_by_token(token):
     return get_status_translation(status)
 
 
-def get_user_messages_by_token_helper(token):
-    return get_user_messages_by_email_helper(token, database_helper.get_email_from_token(token))
+def get_user_messages_by_token_helper(token, hash_info):
+    return get_user_messages_by_email_helper(token, database_helper.get_email_from_token(token),
+                                             hash_info)
 
 
-def get_user_messages_by_email(token, email):
-    status, data = get_user_messages_by_email_helper(token, email)
+def get_user_messages_by_email(token, email, hash_info):
+    status, data = get_user_messages_by_email_helper(token, email, hash_info)
 
     if success(status):
         return {"success": True, "message": "User messages retrieved.", "data": data}
@@ -324,7 +355,10 @@ def get_user_messages_by_email(token, email):
     return get_status_translation(status)
 
 
-def get_user_messages_by_email_helper(token, email):
+def get_user_messages_by_email_helper(token, email, hash_info):
+    if not correct_hashed_data(hash_info):
+        return CORRUPT_DATA, None
+
     if database_helper.get_email_from_token(token):
         if not user_exist(email):
             return NO_SUCH_USER, None
@@ -360,8 +394,10 @@ def post_message(token, message, email, hash_info):
 
 
 def post_message_helper(token, message, email, hash_info):
-    if correct_hashed_data(hash_info) and \
-            database_helper.get_email_from_token(token):
+    if not correct_hashed_data(hash_info):
+        return CORRUPT_DATA
+
+    if database_helper.get_email_from_token(token):
         if not user_exist(email):
             return NO_SUCH_USER
 
@@ -369,19 +405,6 @@ def post_message_helper(token, message, email, hash_info):
             return SUCCESS
 
     return NOT_SIGNED_IN
-
-
-def correct_hashed_data(hash_info):
-    data_to_hash = "/" + hash_info.route
-
-    if hash_info.token is not None:
-        data_to_hash += "/" + hash_info.token
-
-    data_to_hash += "/" + json.dumps(hash_info.data,
-                                     sort_keys=True,
-                                     separators=(',', ':'))
-
-    return hash_info.hash == hashlib.sha256(data_to_hash).hexdigest()
 
 
 def success(status):
@@ -399,6 +422,10 @@ def get_status_translation(status):
         return {"success": False, "message": "Wrong username or password."}
     elif status == USER_ALREADY_EXIST:
         return {"success": False, "message": "User already exists."}
+    elif status == CORRUPT_DATA:
+        return {"success": False, "message": "Corrupt data."}
+    elif status == INVALID_DATA:
+        return {"success": False, "message": "Form data missing or incorrect type."}
     else:
         raise ValueError
 
