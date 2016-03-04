@@ -1,7 +1,7 @@
+import hashlib
 import json
 import random
 import re
-import hashlib
 
 from flask import Flask, g, request
 from flask.ext.bcrypt import Bcrypt
@@ -23,6 +23,14 @@ USER_ALREADY_EXIST = 6
 WEBSOCKETS = {}
 
 
+class HashInfo(object):
+    def __init__(self, route, data, hash, token=None):
+        self.route = route
+        self.data = data
+        self.hash = hash
+        self.token = token
+
+
 @app.before_request
 def before_request():
     g.db = database_helper.connect_db()
@@ -38,11 +46,12 @@ def home():
     return app.send_static_file("client.html")
 
 
-@app.route('/signin', methods=['POST'])
-def sign_in_POST():
+@app.route('/signin/<client_hash>', methods=['POST'])
+def sign_in_POST(client_hash):
     email = request.json['email']
     password = request.json['password']
-    return json.dumps(sign_in(email, password))
+    return json.dumps(sign_in(email, password,
+                              HashInfo("signin", request.get_json(), client_hash)))
 
 
 @app.route('/signin/<token>')
@@ -60,8 +69,8 @@ def sign_in_token_POST(token):
     return ""
 
 
-@app.route('/signup', methods=['POST'])
-def sign_up_POST():
+@app.route('/signup/<client_hash>', methods=['POST'])
+def sign_up_POST(client_hash):
     email = request.json['email']
     password = request.json['password']
     repassword = request.json['repassword']
@@ -72,29 +81,33 @@ def sign_up_POST():
     country = request.json['country']
     return json.dumps(sign_up(email, password, repassword,
                               firstname, familyname,
-                              gender, city, country))
+                              gender, city, country,
+                              HashInfo("signup", request.get_json(), client_hash)))
 
 
-@app.route('/signout', methods=['POST'])
-def sign_out_POST():
+@app.route('/signout/<client_hash>', methods=['POST'])
+def sign_out_POST(client_hash):
     token = request.json["token"]
-    return json.dumps(sign_out(token))
+    return json.dumps(sign_out(token,
+                               HashInfo("signout", request.get_json(), client_hash)))
 
 
-@app.route('/changepassword', methods=['POST'])
-def change_password_POST():
+@app.route('/changepassword/<client_hash>', methods=['POST'])
+def change_password_POST(client_hash):
     token = request.json["token"]
     old_password = request.json["oldpassword"]
     new_password = request.json["newpassword"]
-    return json.dumps(change_password(token, old_password, new_password))
+    return json.dumps(change_password(token, old_password, new_password,
+                                      HashInfo("changepassword", request.get_json(), client_hash)))
 
 
-@app.route('/postmessage', methods=['POST'])
-def post_message_POST():
+@app.route('/postmessage/<client_hash>', methods=['POST'])
+def post_message_POST(client_hash):
     token = request.json["token"]
     message = request.json["message"]
     email = request.json["email"]
-    return json.dumps(post_message(token, message, email))
+    return json.dumps(post_message(token, message, email,
+                                   HashInfo("postmessage", request.get_json(), client_hash)))
 
 
 @app.route('/getuserdatabytoken/<token>', methods=['GET'])
@@ -102,24 +115,9 @@ def get_user_data_by_token_GET(token):
     return json.dumps(get_user_data_by_token(token))
 
 
-@app.route('/getuserdatabyemail/<token>/<email>/<hashed_data>', methods=['GET'])
-def get_user_data_by_email_GET(token, email, hashed_data):
-    print(correct_hashed_data("getuserdatabyemail", email, hashed_data))
-
+@app.route('/getuserdatabyemail/<token>/<email>', methods=['GET'])
+def get_user_data_by_email_GET(token, email):
     return json.dumps(get_user_data_by_email(token, email))
-
-
-def correct_hashed_data(route, email, client_hash):
-
-    if not user_exist(email) or not user_logged_in(email):
-        return False
-
-    token = database_helper.get_token_from_email(email)
-
-    data_to_hash = "/" + route + "/" + token + "/" + email
-
-    return client_hash == hashlib.sha256(data_to_hash).hexdigest()
-
 
 
 @app.route('/getusermessagesbytoken/<token>', methods=['GET'])
@@ -132,8 +130,8 @@ def get_usr_messages_by_email_GET(token, email):
     return json.dumps(get_user_messages_by_email(token, email))
 
 
-def sign_in(email, password):
-    status, token = sign_in_helper(email, password)
+def sign_in(email, password, hash_info):
+    status, token = sign_in_helper(email, password, hash_info)
 
     if success(status):
         return {"success": True, "message": "Successfully signed in.", "data": token}
@@ -141,8 +139,8 @@ def sign_in(email, password):
     return get_status_translation(status)
 
 
-def sign_in_helper(email, password):
-    if not correct_password(email, password):
+def sign_in_helper(email, password, hash_info):
+    if not correct_hashed_data(hash_info) or not correct_password(email, password):
         return WRONG_USERNAME_PASSWORD, None
 
     token = generate_token()
@@ -173,7 +171,7 @@ def generate_token():
 
 def sign_up(email, password, repassword,
             firstname, familyname, gender, city,
-            country):
+            country, hash_info):
     if not valid_email(email) or not valid_password(password) or \
             not matching_passwords(password, repassword):
         return {"success": False, "message": "Form data missing or incorrect type."}
@@ -181,7 +179,8 @@ def sign_up(email, password, repassword,
     password_hash = bcrypt.generate_password_hash(password)
     status = sign_up_helper(email=email, password=password_hash,
                             firstname=firstname, familyname=familyname,
-                            gender=gender, city=city, country=country)
+                            gender=gender, city=city, country=country,
+                            hash_info=hash_info)
 
     if success(status):
         return {"success": True, "message": "Successfully created a new user."}
@@ -190,9 +189,11 @@ def sign_up(email, password, repassword,
 
 
 def sign_up_helper(email, password, firstname,
-                   familyname, gender, city, country):
-    if database_helper.sign_up(email, password, firstname, familyname,
-                               gender, city, country):
+                   familyname, gender, city,
+                   country, hash_info):
+    if correct_hashed_data(hash_info) and \
+            database_helper.sign_up(email, password, firstname, familyname,
+                                    gender, city, country):
         return SUCCESS
 
     return USER_ALREADY_EXIST
@@ -210,8 +211,8 @@ def matching_passwords(p1, p2):
     return p1 == p2
 
 
-def sign_out(token):
-    status = sign_out_helper(token)
+def sign_out(token, hash_info):
+    status = sign_out_helper(token, hash_info)
 
     if success(status):
         return {"success": True, "message": "Successfully signed out."}
@@ -219,21 +220,22 @@ def sign_out(token):
     return get_status_translation(status)
 
 
-def sign_out_helper(token):
+def sign_out_helper(token, hash_info):
     email = database_helper.get_email_from_token(token)
     WEBSOCKETS[email].close()
 
-    if database_helper.sign_out(token):
+    if correct_hashed_data(hash_info) and \
+            database_helper.sign_out(token):
         return SUCCESS
 
     return NOT_SIGNED_IN
 
 
-def change_password(token, old_password, new_password):
+def change_password(token, old_password, new_password, hash_info):
     if not valid_password(new_password):
         return {"success": False, "message": "Form data missing or incorrect type."}
 
-    status = change_password_helper(token, old_password, new_password)
+    status = change_password_helper(token, old_password, new_password, hash_info)
 
     if success(status):
         return {"success": True, "message": "Password changed."}
@@ -241,10 +243,10 @@ def change_password(token, old_password, new_password):
     return get_status_translation(status)
 
 
-def change_password_helper(token, old_password, new_password):
+def change_password_helper(token, old_password, new_password, hash_info):
     email = database_helper.get_email_from_token(token)
 
-    if email:
+    if correct_hashed_data(hash_info) and email:
         if correct_password(email, old_password) and \
                 database_helper.change_password(email,
                                                 bcrypt.generate_password_hash(new_password)):
@@ -348,8 +350,8 @@ def user_logged_in(email):
     return False
 
 
-def post_message(token, message, email):
-    status = post_message_helper(token, message, email)
+def post_message(token, message, email, hash_info):
+    status = post_message_helper(token, message, email, hash_info)
 
     if success(status):
         return {"success": True, "message": "Message posted"}
@@ -357,8 +359,9 @@ def post_message(token, message, email):
     return get_status_translation(status)
 
 
-def post_message_helper(token, message, email):
-    if database_helper.get_email_from_token(token):
+def post_message_helper(token, message, email, hash_info):
+    if correct_hashed_data(hash_info) and \
+            database_helper.get_email_from_token(token):
         if not user_exist(email):
             return NO_SUCH_USER
 
@@ -366,6 +369,19 @@ def post_message_helper(token, message, email):
             return SUCCESS
 
     return NOT_SIGNED_IN
+
+
+def correct_hashed_data(hash_info):
+    data_to_hash = "/" + hash_info.route
+
+    if hash_info.token is not None:
+        data_to_hash += "/" + hash_info.token
+
+    data_to_hash += "/" + json.dumps(hash_info.data,
+                                     sort_keys=True,
+                                     separators=(',', ':'))
+
+    return hash_info.hash == hashlib.sha256(data_to_hash).hexdigest()
 
 
 def success(status):
