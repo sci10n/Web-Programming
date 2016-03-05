@@ -67,6 +67,7 @@ def sign_in_token_POST(token):
     database_helper.sign_out(token)
     return ""
 
+
 @app.route('/signup/<client_hash>', methods=['POST'])
 def sign_up_POST(client_hash):
     email = request.json['email']
@@ -444,7 +445,7 @@ def send_live_data_by_email(email):
 
 
 def send_live_data_to_all():
-    for email,_ in database_helper.signed_in_users():
+    for email, _ in database_helper.signed_in_users():
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].send(json.dumps(LiveData(email).json()))
 

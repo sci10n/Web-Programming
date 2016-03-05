@@ -146,6 +146,7 @@ def signed_in_users():
 
     return ()
 
+
 def execute_query(query, args=(), commit=False):
     with g.db:
         cur = g.db.cursor()
