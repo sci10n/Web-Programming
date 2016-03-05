@@ -292,9 +292,8 @@ connectWebSocket = function (token) {
 
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        localStorage.setItem("messages", data.messages);
-        localStorage.setItem("signedup", data.signedup);
-        localStorage.setItem("signedin", data.signedin);
+        updateChart(data.messages,
+            data.signedin, data.signedup);
     }
 };
 
@@ -304,6 +303,7 @@ changeView = function (name) {
     } else if (name == "profile") {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
         showHomePanel();
+        createGraph();
     }
 };
 
@@ -320,18 +320,39 @@ showPanel = function (name) {
     } else if (name === "account") {
         accountPanel.style.display = "block";
     } else if (name == "liveData") {
-        d3.select("#postGraph")
-            .append("svg")
-            .attr("width", 50)
-            .attr("height", 50)
-            .append("circle")
-            .attr("cx", 25)
-            .attr("cy", 25)
-            .attr("r", 25)
-            .style("fill", "purple");
         liveDataPanel.style.display = "block";
-
     }
+};
+
+var chart;
+
+createGraph = function () {
+    var ctx = document.getElementById("chart").getContext("2d");
+
+    var data = {
+        labels: ["Posts", "SignedIn", "SignedUp"],
+        datasets: [
+            {
+                fillColor: "rgba(0,102,102,0.5)",
+                strokeColor: "rgba(220,220,220,0.8)",
+                highlightFill: "rgba(220,220,220,0.75)",
+                highlightStroke: "rgba(220,220,220,1)",
+                data: [0, 0, 0]
+            }]
+    };
+
+    var options = {
+        responsive: true
+    };
+
+    chart = new Chart(ctx).Bar(data, options);
+};
+
+updateChart = function (messages, signedin, signedup) {
+    chart.datasets[0].bars[0].value = messages;
+    chart.datasets[0].bars[1].value = signedin;
+    chart.datasets[0].bars[2].value = signedup;
+    chart.update();
 };
 
 init = function () {

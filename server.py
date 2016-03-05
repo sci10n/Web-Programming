@@ -60,6 +60,7 @@ def sign_in_token_POST(token):
 
         ws = request.environ.get("wsgi.websocket")
         WEBSOCKETS[email] = ws
+        send_live_data_to_all()
         while ws.receive():
             pass
 
@@ -207,6 +208,7 @@ def sign_up(email, password, repassword,
                             gender=gender, city=city, country=country)
 
     if success(status):
+        send_live_data_to_all()
         return {"success": True, "message": "Successfully created a new user."}
 
     return get_status_translation(status)
@@ -238,6 +240,7 @@ def sign_out(token, hash_info):
     status = sign_out_helper(token, hash_info)
 
     if success(status):
+        send_live_data_to_all()
         return {"success": True, "message": "Successfully signed out."}
 
     return get_status_translation(status)
@@ -438,7 +441,9 @@ def send_live_data_by_email(email):
         WEBSOCKETS[email].send(json.dumps(live_data.json()))
 
 def send_live_data_to_all():
-    pass
+    for email,_ in database_helper.signed_in_users():
+        if WEBSOCKETS.get(email, False):
+            WEBSOCKETS[email].send(json.dumps(LiveData(email).json()))
 
 
 

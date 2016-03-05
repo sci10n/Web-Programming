@@ -3,7 +3,7 @@
     <link href="client.css" type="text/css" rel="stylesheet">
     <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/sha256.js"
             type="text/javascript"></script>
-    <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
     <script src="client.js" type="text/javascript"></script>
 </head>
 <body>
@@ -82,11 +82,10 @@
 						</div>
 			  </form>
 			</div>
-
 </script>
 <script type="text/view" id="profileview">
 			<div class="tab" name="tabHome" id="tabHome" onclick="showHomePanel()" >
-
+			HOME
 			</div>
 			<div class="tab" name="tabBrowse" id="tabBrowse" onclick="showPanel('browse')">
 			  BROWSE
@@ -161,9 +160,9 @@
 
 					</form>
 				</div>
+
 				<div class="panel" id="liveDataPanel" name="liveDataPanel">
-				LIVE DATA
-				<div class="graph" id="postGraph" name="postGraph"></div>
+				<canvas class="panel" id="chart" name="chart"></canvas>
 				</div>
 
 </script>
