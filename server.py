@@ -9,6 +9,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 import database_helper
 from security import HashInfo, correct_hashed_data
+from live_data import LiveData
 
 app = Flask(__name__, static_url_path="")
 bcrypt = Bcrypt(app)
@@ -54,7 +55,7 @@ def sign_in_POST(client_hash):
 def sign_in_token_POST(token):
     if request.environ.get("wsgi.websocket"):
         email = database_helper.get_email_from_token(token)
-        if WEBSOCKETS.get(email):
+        if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].close()
 
         ws = request.environ.get("wsgi.websocket")
@@ -62,8 +63,8 @@ def sign_in_token_POST(token):
         while ws.receive():
             pass
 
+    database_helper.sign_out(token)
     return ""
-
 
 @app.route('/signup/<client_hash>', methods=['POST'])
 def sign_up_POST(client_hash):
@@ -388,6 +389,7 @@ def post_message(token, message, email, hash_info):
     status = post_message_helper(token, message, email, hash_info)
 
     if success(status):
+        send_live_data_by_email(email)
         return {"success": True, "message": "Message posted"}
 
     return get_status_translation(status)
@@ -428,6 +430,16 @@ def get_status_translation(status):
         return {"success": False, "message": "Form data missing or incorrect type."}
     else:
         raise ValueError
+
+def send_live_data_by_email(email):
+    live_data = LiveData(email)
+
+    if WEBSOCKETS.get(email, False):
+        WEBSOCKETS[email].send(json.dumps(live_data.json()))
+
+def send_live_data_to_all():
+    pass
+
 
 
 if __name__ == "__main__":

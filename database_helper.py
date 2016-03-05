@@ -68,6 +68,7 @@ def sign_up(email, password, firstname,
     return False
 
 
+
 def sign_out(token):
     result = execute_query("""DELETE FROM UserTokens WHERE token = ?""",
                            [token], commit=True)
@@ -127,6 +128,23 @@ def post_message(email, writer, message):
 
     return False
 
+
+def signed_up_users():
+    result = execute_query("""SELECT * FROM Users""")
+
+    if result:
+        return result
+
+    return ()
+
+
+def signed_in_users():
+    result = execute_query("""SELECT * FROM UserTokens""")
+
+    if result:
+        return result
+
+    return ()
 
 def execute_query(query, args=(), commit=False):
     with g.db:

@@ -125,7 +125,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
         repassword_input.send_keys(repassword)
         repassword_input.submit()
 
-        time.sleep(0.5)
+        time.sleep(1)
 
         return self.signup_status()
 
@@ -146,7 +146,7 @@ class TwiddlerWelcomeView(unittest.TestCase):
         password_input.send_keys(password)
         password_input.submit()
 
-        time.sleep(.5)
+        time.sleep(1)
 
         return self.signin_status()
 

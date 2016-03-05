@@ -14,8 +14,7 @@ customSignIn = function (form) {
         }
     };
 
-sendPOSTRequest(xmlhttp, "/signin/" + hashed_data, data);
-
+    sendPOSTRequest(xmlhttp, "/signin/" + hashed_data, data);
 };
 
 customSignInResponse = function (result) {
@@ -32,8 +31,8 @@ customSignUp = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
     var data = JSON.stringify({
-    city: form.city.value,
-    country: form.country.value,
+        city: form.city.value,
+        country: form.country.value,
         email: form.email.value,
         familyname: form.lastname.value,
         firstname: form.firstname.value,
@@ -42,7 +41,7 @@ customSignUp = function (form) {
         repassword: form.repassword.value,
     });
 
-var hashed_data = CryptoJS.SHA256("/signup/" + data);
+    var hashed_data = CryptoJS.SHA256("/signup/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -91,8 +90,8 @@ customChangePassword = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
     var data = JSON.stringify({
-    newpassword: form.newpassword.value,
-    oldpassword: form.oldpassword.value,
+        newpassword: form.newpassword.value,
+        oldpassword: form.oldpassword.value,
         token: localStorage.getItem("user_token"),
     });
 
@@ -121,9 +120,9 @@ customChangePasswordResponse = function (result) {
 customPostMessage = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
-        var data = JSON.stringify({
-    email: localStorage.getItem("post_email"),
-    message: form.message.value,
+    var data = JSON.stringify({
+        email: localStorage.getItem("post_email"),
+        message: form.message.value,
         token: localStorage.getItem("user_token"),
     });
 
@@ -267,17 +266,17 @@ matchingPasswords = function (password, repassword) {
     }
 };
 
-sendPOSTRequest = function(xmlhttp, url, data) {
-xmlhttp.open("POST", url, true);
+sendPOSTRequest = function (xmlhttp, url, data) {
+    xmlhttp.open("POST", url, true);
     xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
     xmlhttp.send(data);
-}
+};
 
-sendGETRequest = function(xmlhttp, url) {
-xmlhttp.open("GET", url, true);
+sendGETRequest = function (xmlhttp, url) {
+    xmlhttp.open("GET", url, true);
     xmlhttp.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
     xmlhttp.send(null);
-}
+};
 
 connectWebSocket = function (token) {
     var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + token);
@@ -290,6 +289,13 @@ connectWebSocket = function (token) {
 
     connection.onopen = function () {
     };
+
+    connection.onmessage = function (event) {
+        var data = JSON.parse(event.data);
+        localStorage.setItem("messages", data.messages);
+        localStorage.setItem("signedup", data.signedup);
+        localStorage.setItem("signedin", data.signedin);
+    }
 };
 
 changeView = function (name) {
@@ -305,12 +311,26 @@ showPanel = function (name) {
     homePanel.style.display = "none";
     browsePanel.style.display = "none";
     accountPanel.style.display = "none";
+    liveDataPanel.style.display = "none";
+
     if (name === "home") {
         homePanel.style.display = "block";
     } else if (name === "browse") {
         browsePanel.style.display = "block";
     } else if (name === "account") {
         accountPanel.style.display = "block";
+    } else if (name == "liveData") {
+        d3.select("#postGraph")
+            .append("svg")
+            .attr("width", 50)
+            .attr("height", 50)
+            .append("circle")
+            .attr("cx", 25)
+            .attr("cy", 25)
+            .attr("r", 25)
+            .style("fill", "purple");
+        liveDataPanel.style.display = "block";
+
     }
 };
 
