@@ -252,7 +252,8 @@ def sign_out_helper(token, hash_info):
 
     email = database_helper.get_email_from_token(token)
     if database_helper.sign_out(token):
-        WEBSOCKETS[email].close()
+        if WEBSOCKETS.get(email, False):
+            WEBSOCKETS[email].close()
         return SUCCESS
 
     return NOT_SIGNED_IN
@@ -434,17 +435,18 @@ def get_status_translation(status):
     else:
         raise ValueError
 
+
 def send_live_data_by_email(email):
     live_data = LiveData(email)
 
     if WEBSOCKETS.get(email, False):
         WEBSOCKETS[email].send(json.dumps(live_data.json()))
 
+
 def send_live_data_to_all():
     for email,_ in database_helper.signed_in_users():
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].send(json.dumps(LiveData(email).json()))
-
 
 
 if __name__ == "__main__":

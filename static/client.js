@@ -287,9 +287,6 @@ connectWebSocket = function (token) {
         changeView("welcome");
     };
 
-    connection.onopen = function () {
-    };
-
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
         updateChart(data.messages,
@@ -330,13 +327,13 @@ createGraph = function () {
     var ctx = document.getElementById("chart").getContext("2d");
 
     var data = {
-        labels: ["Posts", "SignedIn", "SignedUp"],
+        labels: ["Posts", "Signed In", "Signed Up"],
         datasets: [
             {
                 fillColor: "rgba(0,102,102,0.5)",
-                strokeColor: "rgba(220,220,220,0.8)",
-                highlightFill: "rgba(220,220,220,0.75)",
-                highlightStroke: "rgba(220,220,220,1)",
+                strokeColor: "rgba(0,120,120,0.8)",
+                highlightFill: "rgba(0,51,51,0.75)",
+                highlightStroke: "rgba(0,60,60,1)",
                 data: [0, 0, 0]
             }]
     };

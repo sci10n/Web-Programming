@@ -11,12 +11,12 @@ MALE = 0
 FEMALE = 1
 
 
-class TwiddlerWelcomeView(unittest.TestCase):
+class TwidderWelcomeView(unittest.TestCase):
     def setUp(self):
         database_helper.init_db()
         self.driver = webdriver.Firefox()
-        self.driver.get("localhost:5000/")
         self.driver.implicitly_wait(1)
+        self.driver.get("localhost:5000/")
 
     def tearDown(self):
         self.driver.close()
