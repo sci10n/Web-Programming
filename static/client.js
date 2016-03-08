@@ -1,25 +1,29 @@
 customSignIn = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
+    var timestamp = Date.now();
+
+
+
     var data = JSON.stringify({
         email: form.username.value,
         password: form.password.value,
+        timestamp: timestamp
     });
-
-    var hashed_data = CryptoJS.SHA256("/signin/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            localStorage.setItem("user_email", form.username.value);
             customSignInResponse(JSON.parse(xmlhttp.responseText));
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signin/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/signin/", data);
 };
 
 customSignInResponse = function (result) {
     if (result.success) {
-        connectWebSocket(result.data);
+        connectWebSocket();
         localStorage.setItem("user_token", result.data);
         changeView("profile");
     } else {
@@ -39,9 +43,8 @@ customSignUp = function (form) {
         gender: form.gender.value,
         password: form.password.value,
         repassword: form.repassword.value,
+        timestamp: Date.now()
     });
-
-    var hashed_data = CryptoJS.SHA256("/signup/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -49,7 +52,7 @@ customSignUp = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signup/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/signup/", data);
 };
 
 customSignUpResponse = function (result) {
@@ -65,11 +68,20 @@ customSignUpResponse = function (result) {
 customSignOut = function () {
     var xmlhttp = new XMLHttpRequest();
 
-    var data = JSON.stringify({
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        timestamp: timestamp,
         token: localStorage.getItem("user_token")
     });
 
-    var hashed_data = CryptoJS.SHA256("/signout/" + data);
+    var hashed_data = CryptoJS.SHA256("/signout/" + data_to_hash);
+
+    var data = JSON.stringify({
+        email: localStorage.getItem("user_email"),
+        hash: hashed_data.toString(),
+        timestamp: timestamp
+    });
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -77,7 +89,7 @@ customSignOut = function () {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signout/" + hashed_data, data)
+    sendPOSTRequest(xmlhttp, "/signout/", data)
 };
 
 customSignOutResponse = function (result) {
@@ -89,13 +101,24 @@ customSignOutResponse = function (result) {
 customChangePassword = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        newpassword: form.newpassword.value,
+        oldpassword: form.oldpassword.value,
+        timestamp: timestamp,
+        token: localStorage.getItem("user_token")
+    });
+
+    var hashed_data = CryptoJS.SHA256("/changepassword/" + data_to_hash);
+
     var data = JSON.stringify({
         newpassword: form.newpassword.value,
         oldpassword: form.oldpassword.value,
-        token: localStorage.getItem("user_token"),
+        email: localStorage.getItem("user_email"),
+        hash: hashed_data.toString(),
+        timestamp: timestamp
     });
-
-    var hashed_data = CryptoJS.SHA256("/changepassword/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -103,7 +126,7 @@ customChangePassword = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/changepassword/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/changepassword/", data);
 };
 
 customChangePasswordResponse = function (result) {
@@ -120,13 +143,25 @@ customChangePasswordResponse = function (result) {
 customPostMessage = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
-    var data = JSON.stringify({
-        email: localStorage.getItem("post_email"),
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        client_email: localStorage.getItem("user_email"),
         message: form.message.value,
-        token: localStorage.getItem("user_token"),
+        post_email: localStorage.getItem("post_email"),
+        timestamp: timestamp,
+        token: localStorage.getItem("user_token")
     });
 
-    var hashed_data = CryptoJS.SHA256("/postmessage/" + data);
+    var hashed_data = CryptoJS.SHA256("/postmessage/" + data_to_hash);
+
+    var data = JSON.stringify({
+        message: form.message.value,
+        post_email: localStorage.getItem("post_email"),
+        client_email: localStorage.getItem("user_email"),
+        hash: hashed_data.toString(),
+        timestamp: timestamp
+    });
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -134,7 +169,7 @@ customPostMessage = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/postmessage/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/postmessage/", data);
 };
 
 customPostMessageResponse = function (result) {
@@ -156,14 +191,17 @@ showHomePanel = function () {
     };
 
     sendGETRequest(xmlhttp, '/getuserdatabytoken/' +
-        localStorage.getItem("user_token") + '/' + hashed_data);
+        localStorage.getItem("user_email") + '/' + hashed_data);
 };
 
 showHomePanelResponse = function (result) {
+if (result.success)
+{
     localStorage.setItem("post_email", result.data.email);
     showPanel("home");
     getInfo(result.data.email);
     getMessages();
+}
 };
 
 getInfo = function (email) {
@@ -178,7 +216,7 @@ getInfo = function (email) {
     };
 
     sendGETRequest(xmlhttp, '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email + '/' + hashed_data)
+        localStorage.getItem("user_email") + '/' + email + '/' + hashed_data)
 };
 
 getInfoResponse = function (result) {
@@ -204,7 +242,7 @@ getMessages = function () {
     };
 
     sendGETRequest(xmlhttp, '/getusermessagesbyemail/' +
-        localStorage.getItem("user_token") + '/' +
+        localStorage.getItem("user_email") + '/' +
         localStorage.getItem("post_email") + '/' + hashed_data);
 };
 
@@ -234,7 +272,7 @@ browseOtherUser = function (form) {
     };
 
     sendGETRequest(xmlhttp, '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email +
+        localStorage.getItem("user_email") + '/' + email +
         '/' + hashed_data);
 };
 
@@ -278,19 +316,22 @@ sendGETRequest = function (xmlhttp, url) {
     xmlhttp.send(null);
 };
 
-connectWebSocket = function (token) {
-    var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + token);
+connectWebSocket = function () {
+    var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + localStorage.getItem("user_email"));
 
     connection.onclose = function () {
         connection.close();
         localStorage.setItem("user_token", "");
+        localStorage.setItem("user_email", "");
         changeView("welcome");
     };
 
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        updateChart(data.messages,
-            data.signedin, data.signedup);
+        updateGraphs(data.messages,
+        data.user_messages,
+            data.signedin,
+            data.signedup);
     }
 };
 
@@ -300,7 +341,7 @@ changeView = function (name) {
     } else if (name == "profile") {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
         showHomePanel();
-        createGraph();
+        createGraphs();
     }
 };
 
@@ -321,36 +362,76 @@ showPanel = function (name) {
     }
 };
 
-var chart;
+var post_graph;
+var user_graph;
 
-createGraph = function () {
-    var ctx = document.getElementById("chart").getContext("2d");
+createGraphs = function () {
+createPostGraph();
+createUserGraph();
+};
+
+createPostGraph = function() {
+var ctx = document.getElementById("post_graph").getContext("2d");
 
     var data = {
-        labels: ["Posts", "Signed In", "Signed Up"],
+                    labels: ["user posts", "total posts"],
         datasets: [
             {
                 fillColor: "rgba(0,102,102,0.5)",
                 strokeColor: "rgba(0,120,120,0.8)",
                 highlightFill: "rgba(0,51,51,0.75)",
                 highlightStroke: "rgba(0,60,60,1)",
-                data: [0, 0, 0]
-            }]
-    };
+                data: [0, 0]
+            }]};
+
+
 
     var options = {
         responsive: true
     };
 
-    chart = new Chart(ctx).Bar(data, options);
+    post_graph = new Chart(ctx).Bar(data, options);
+    };
+
+createUserGraph = function() {
+var ctx = document.getElementById("user_graph").getContext("2d");
+
+    var data = {
+            labels: ["signed in", "signed up"],
+        datasets: [
+            {
+                fillColor: "rgba(0,102,102,0.5)",
+                strokeColor: "rgba(0,120,120,0.8)",
+                highlightFill: "rgba(0,51,51,0.75)",
+                highlightStroke: "rgba(0,60,60,1)",
+                data: [0, 0]
+            }]
+    };
+
+
+    var options = {
+        responsive: true
+    };
+
+    user_graph = new Chart(ctx).Bar(data, options);
+    };
+
+updateGraphs = function (total_messages, user_messages, signedin, signedup) {
+updatePostGraph(user_messages, total_messages);
+updateUserGraph(signedin, signedup);
 };
 
-updateChart = function (messages, signedin, signedup) {
-    chart.datasets[0].bars[0].value = messages;
-    chart.datasets[0].bars[1].value = signedin;
-    chart.datasets[0].bars[2].value = signedup;
-    chart.update();
-};
+updatePostGraph = function(user_messages, total_messages){
+    post_graph.datasets[0].bars[0].value = user_messages;
+    post_graph.datasets[0].bars[1].value = total_messages;
+    post_graph.update();
+}
+
+updateUserGraph = function(signedin, signedup) {
+    user_graph.datasets[0].bars[0].value = signedin;
+    user_graph.datasets[0].bars[1].value = signedup;
+    user_graph.update();
+}
 
 init = function () {
     changeView("welcome");

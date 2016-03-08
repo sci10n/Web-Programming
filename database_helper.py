@@ -68,7 +68,6 @@ def sign_up(email, password, firstname,
     return False
 
 
-
 def sign_out(token):
     result = execute_query("""DELETE FROM UserTokens WHERE token = ?""",
                            [token], commit=True)
@@ -109,9 +108,18 @@ def get_user_data(email):
     return ()
 
 
-def get_messages(email):
+def get_messages_by_email(email):
     result = execute_query("""SELECT Writer, Message FROM UserMessages WHERE email = ?""",
                            [email])
+
+    if result:
+        return result
+
+    return ()
+
+
+def get_messages():
+    result = execute_query("""SELECT Writer, Message FROM UserMessages""")
 
     if result:
         return result
