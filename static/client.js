@@ -326,7 +326,7 @@ connectWebSocket = function () {
 
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        updateCharts(data.messages,
+        updateCharts(data.max_messages,
             data.user_messages,
             data.signedin,
             data.signedup);
@@ -372,7 +372,7 @@ createPostChart = function () {
     var ctx = document.getElementById("post_chart").getContext("2d");
 
     var data = {
-        labels: ["user posts", "total posts"],
+        labels: ["user posts", "max posts"],
         datasets: [
             {
                 fillColor: "rgba(0,102,102,0.5)",
