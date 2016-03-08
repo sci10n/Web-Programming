@@ -10,7 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 import database_helper
 from live_data import LiveData
-from security import HashInfo, correct_hashed_data
+from security import HashInfo, correct_hash
 
 app = Flask(__name__, static_url_path="")
 bcrypt = Bcrypt(app)
@@ -276,7 +276,7 @@ def sign_out_helper(token, timestamp, hash_info):
     if not valid_timestamp(timestamp):
         return INVALID_TIMESTAMP
 
-    if not correct_hashed_data(hash_info):
+    if not correct_hash(hash_info):
         return CORRUPT_DATA
 
     email = database_helper.get_email_from_token(token)
@@ -290,7 +290,7 @@ def sign_out_helper(token, timestamp, hash_info):
 
 def change_password(token, old_password, new_password,
                     timestamp, hash_info):
-    if not correct_hashed_data(hash_info):
+    if not correct_hash(hash_info):
         return get_status_translation(CORRUPT_DATA)
 
     if not valid_timestamp(timestamp):
@@ -349,7 +349,7 @@ def get_user_data_by_email(token, email, hash_info):
 
 
 def get_user_data_by_email_helper(token, email, hash_info):
-    if not correct_hashed_data(hash_info):
+    if not correct_hash(hash_info):
         return CORRUPT_DATA, None
 
     if user_exist(email):
@@ -398,7 +398,7 @@ def get_user_messages_by_email(token, email, hash_info):
 
 
 def get_user_messages_by_email_helper(token, email, hash_info):
-    if not correct_hashed_data(hash_info):
+    if not correct_hash(hash_info):
         return CORRUPT_DATA, None
 
     if database_helper.get_email_from_token(token):
@@ -455,7 +455,7 @@ def post_message(token, message, email, timestamp, hash_info):
 
 def post_message_helper(token, message, email,
                         timestamp, hash_info):
-    if not correct_hashed_data(hash_info):
+    if not correct_hash(hash_info):
         return CORRUPT_DATA
 
     if not valid_timestamp(timestamp):
@@ -496,13 +496,6 @@ def get_status_translation(status):
         return {"success": False, "message": "Invalid timestamp."}
     else:
         raise ValueError
-
-
-def send_live_data_by_email(email):
-    live_data = LiveData(email)
-
-    if WEBSOCKETS.get(email, False):
-        WEBSOCKETS[email].send(json.dumps(live_data.json()))
 
 
 def send_live_data_to_all():

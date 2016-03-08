@@ -11,7 +11,7 @@ class HashInfo(object):
         self.email = email
 
 
-def correct_hashed_data(hash_info):
+def correct_hash(hash_info):
     data_to_hash = "/" + hash_info.route
 
     if hash_info.token is not None:
