@@ -433,7 +433,7 @@ def valid_timestamp(timestamp):
     t = datetime.fromtimestamp(timestamp / 1000.0)
     dt = datetime.now() - t
 
-    if dt.total_seconds() > max_seconds:
+    if dt.total_seconds() > max_seconds or dt.total_seconds() < 0:
         return False
 
     return True
