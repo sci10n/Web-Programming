@@ -1,6 +1,7 @@
 import json
 import random
 import re
+from datetime import datetime
 
 from flask import Flask, g, request
 from flask.ext.bcrypt import Bcrypt
@@ -22,6 +23,7 @@ WRONG_USERNAME_PASSWORD = 5
 USER_ALREADY_EXIST = 6
 CORRUPT_DATA = 7
 INVALID_DATA = 8
+INVALID_TIMESTAMP = 9
 
 WEBSOCKETS = {}
 
@@ -41,14 +43,12 @@ def home():
     return app.send_static_file("client.html")
 
 
-@app.route('/signin/<client_hash>', methods=['POST'])
-def sign_in_POST(client_hash):
+@app.route('/signin/', methods=['POST'])
+def sign_in_POST():
     email = request.json['email']
     password = request.json['password']
-    return json.dumps(sign_in(email, password,
-                              HashInfo(route="signin",
-                                       data=request.get_json(),
-                                       hash=client_hash)))
+    timestamp = request.json["timestamp"]
+    return json.dumps(sign_in(email, password, timestamp))
 
 
 @app.route('/signin/<token>')
@@ -67,8 +67,9 @@ def sign_in_token_POST(token):
     database_helper.sign_out(token)
     return ""
 
-@app.route('/signup/<client_hash>', methods=['POST'])
-def sign_up_POST(client_hash):
+
+@app.route('/signup/', methods=['POST'])
+def sign_up_POST():
     email = request.json['email']
     password = request.json['password']
     repassword = request.json['repassword']
@@ -77,55 +78,76 @@ def sign_up_POST(client_hash):
     gender = request.json['gender']
     city = request.json['city']
     country = request.json['country']
+    timestamp = request.json["timestamp"]
     return json.dumps(sign_up(email, password, repassword,
                               firstname, familyname,
                               gender, city, country,
-                              HashInfo(route="signup",
-                                       data=request.get_json(),
-                                       hash=client_hash)))
+                              timestamp))
 
 
-@app.route('/signout/<client_hash>', methods=['POST'])
-def sign_out_POST(client_hash):
-    token = request.json["token"]
-    return json.dumps(sign_out(token,
+@app.route('/signout/', methods=['POST'])
+def sign_out_POST():
+    print("JSON OBJECT", request.json)
+    token = database_helper.get_token_from_email(request.json["email"])
+    timestamp = request.json["timestamp"]
+    client_hash = request.json['hash']
+    data = {"token": token,
+            "timestamp": timestamp}
+    return json.dumps(sign_out(token, timestamp,
                                HashInfo(route="signout",
-                                        data=request.get_json(),
+                                        data=data,
                                         hash=client_hash)))
 
 
-@app.route('/changepassword/<client_hash>', methods=['POST'])
-def change_password_POST(client_hash):
-    token = request.json["token"]
+@app.route('/changepassword/', methods=['POST'])
+def change_password_POST():
+    token = database_helper.get_token_from_email(request.json["email"])
     old_password = request.json["oldpassword"]
     new_password = request.json["newpassword"]
-    return json.dumps(change_password(token, old_password, new_password,
+    client_hash = request.json['hash']
+    timestamp = request.json["timestamp"]
+    data = {"newpassword": new_password,
+            "oldpassword": old_password,
+            "token": token,
+            "timestamp": timestamp}
+    return json.dumps(change_password(token, old_password, new_password, timestamp,
                                       HashInfo(route="changepassword",
-                                               data=request.get_json(),
+                                               data=data,
                                                hash=client_hash)))
 
 
-@app.route('/postmessage/<client_hash>', methods=['POST'])
-def post_message_POST(client_hash):
-    token = request.json["token"]
+@app.route('/postmessage/', methods=['POST'])
+def post_message_POST():
+    client_email = request.json["client_email"]
+    token = database_helper.get_token_from_email(client_email)
     message = request.json["message"]
-    email = request.json["email"]
-    return json.dumps(post_message(token, message, email,
+    post_email = request.json["post_email"]
+    client_hash = request.json['hash']
+    timestamp = request.json["timestamp"]
+    data = {"client_email": client_email,
+            "message": message,
+            "post_email": post_email,
+            "timestamp": timestamp,
+            "token": token}
+    return json.dumps(post_message(token, message,
+                                   post_email, timestamp,
                                    HashInfo(route="postmessage",
-                                            data=request.get_json(),
+                                            data=data,
                                             hash=client_hash)))
 
 
-@app.route('/getuserdatabytoken/<token>/<client_hash>', methods=['GET'])
-def get_user_data_by_token_GET(token, client_hash):
+@app.route('/getuserdatabytoken/<email>/<client_hash>', methods=['GET'])
+def get_user_data_by_token_GET(email, client_hash):
+    token = database_helper.get_token_from_email(email)
     return json.dumps(get_user_data_by_token(token,
                                              HashInfo(route="getuserdatabytoken",
                                                       hash=client_hash,
-                                                      token=token)))
+                                                      email=email)))
 
 
-@app.route('/getuserdatabyemail/<token>/<email>/<client_hash>', methods=['GET'])
-def get_user_data_by_email_GET(token, email, client_hash):
+@app.route('/getuserdatabyemail/<client_email>/<email>/<client_hash>', methods=['GET'])
+def get_user_data_by_email_GET(client_email, email, client_hash):
+    token = database_helper.get_token_from_email(client_email)
     return json.dumps(get_user_data_by_email(token, email,
                                              HashInfo(route="getuserdatabyemail",
                                                       hash=client_hash,
@@ -133,16 +155,18 @@ def get_user_data_by_email_GET(token, email, client_hash):
                                                       email=email)))
 
 
-@app.route('/getusermessagesbytoken/<token>/<client_hash>', methods=['GET'])
-def get_user_messages_by_token_GET(token, client_hash):
+@app.route('/getusermessagesbytoken/<email>/<client_hash>', methods=['GET'])
+def get_user_messages_by_token_GET(email, client_hash):
+    token = database_helper.get_token_from_email(email)
     return json.dumps(get_user_messages_by_token(token,
                                                  HashInfo(route="getusermessagesbytoken",
                                                           hash=client_hash,
                                                           token=token)))
 
 
-@app.route('/getusermessagesbyemail/<token>/<email>/<client_hash>', methods=['GET'])
-def get_usr_messages_by_email_GET(token, email, client_hash):
+@app.route('/getusermessagesbyemail/<client_email>/<email>/<client_hash>', methods=['GET'])
+def get_usr_messages_by_email_GET(client_email, email, client_hash):
+    token = database_helper.get_token_from_email(client_email)
     return json.dumps(get_user_messages_by_email(token, email,
                                                  HashInfo(route="getusermessagesbyemail",
                                                           hash=client_hash,
@@ -150,8 +174,10 @@ def get_usr_messages_by_email_GET(token, email, client_hash):
                                                           email=email)))
 
 
-def sign_in(email, password, hash_info):
-    status, token = sign_in_helper(email, password, hash_info)
+def sign_in(email, password, timestamp):
+    status, token = sign_in_helper(email=email,
+                                   password=password,
+                                   timestamp=timestamp)
 
     if success(status):
         return {"success": True, "message": "Successfully signed in.", "data": token}
@@ -159,9 +185,9 @@ def sign_in(email, password, hash_info):
     return get_status_translation(status)
 
 
-def sign_in_helper(email, password, hash_info):
-    if not correct_hashed_data(hash_info):
-        return CORRUPT_DATA, None
+def sign_in_helper(email, password, timestamp):
+    if not valid_timestamp(timestamp):
+        return INVALID_TIMESTAMP, None
 
     if not correct_password(email, password):
         return WRONG_USERNAME_PASSWORD, None
@@ -194,9 +220,9 @@ def generate_token():
 
 def sign_up(email, password, repassword,
             firstname, familyname, gender, city,
-            country, hash_info):
-    if not correct_hashed_data(hash_info):
-        return get_status_translation(CORRUPT_DATA)
+            country, timestamp):
+    if not valid_timestamp(timestamp):
+        return get_status_translation(INVALID_TIMESTAMP)
 
     if not valid_email(email) or not valid_password(password) or \
             not matching_passwords(password, repassword):
@@ -217,8 +243,9 @@ def sign_up(email, password, repassword,
 def sign_up_helper(email, password, firstname,
                    familyname, gender, city,
                    country):
-    if database_helper.sign_up(email, password, firstname, familyname,
-                               gender, city, country):
+    if database_helper.sign_up(email=email, password=password,
+                               firstname=firstname, familyname=familyname,
+                               gender=gender, city=city, country=country):
         return SUCCESS
 
     return USER_ALREADY_EXIST
@@ -236,8 +263,8 @@ def matching_passwords(p1, p2):
     return p1 == p2
 
 
-def sign_out(token, hash_info):
-    status = sign_out_helper(token, hash_info)
+def sign_out(token, timestamp, hash_info):
+    status = sign_out_helper(token, timestamp, hash_info)
 
     if success(status):
         send_live_data_to_all()
@@ -246,8 +273,12 @@ def sign_out(token, hash_info):
     return get_status_translation(status)
 
 
-def sign_out_helper(token, hash_info):
+def sign_out_helper(token, timestamp, hash_info):
+    if not valid_timestamp(timestamp):
+        return INVALID_TIMESTAMP
+
     if not correct_hashed_data(hash_info):
+        print("CORRUPT")
         return CORRUPT_DATA
 
     email = database_helper.get_email_from_token(token)
@@ -258,9 +289,13 @@ def sign_out_helper(token, hash_info):
     return NOT_SIGNED_IN
 
 
-def change_password(token, old_password, new_password, hash_info):
+def change_password(token, old_password, new_password,
+                    timestamp, hash_info):
     if not correct_hashed_data(hash_info):
         return get_status_translation(CORRUPT_DATA)
+
+    if not valid_timestamp(timestamp):
+        return get_status_translation(timestamp)
 
     if not valid_password(new_password):
         return get_status_translation(INVALID_DATA)
@@ -288,7 +323,8 @@ def change_password_helper(token, old_password, new_password):
 
 
 def get_user_data_by_token(token, hash_info):
-    status, data = get_user_data_by_token_helper(token, hash_info)
+    status, data = get_user_data_by_token_helper(token=token,
+                                                 hash_info=hash_info)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
@@ -297,12 +333,15 @@ def get_user_data_by_token(token, hash_info):
 
 
 def get_user_data_by_token_helper(token, hash_info):
-    return get_user_data_by_email_helper(token, database_helper.get_email_from_token(token),
+    return get_user_data_by_email_helper(token,
+                                         database_helper.get_email_from_token(token),
                                          hash_info)
 
 
 def get_user_data_by_email(token, email, hash_info):
-    status, data = get_user_data_by_email_helper(token, email, hash_info)
+    status, data = get_user_data_by_email_helper(token=token,
+                                                 email=email,
+                                                 hash_info=hash_info)
 
     if success(status):
         return {"success": True, "message": "User data retrieved.", "data": data}
@@ -388,8 +427,25 @@ def user_logged_in(email):
     return False
 
 
-def post_message(token, message, email, hash_info):
-    status = post_message_helper(token, message, email, hash_info)
+def valid_timestamp(timestamp):
+    t = datetime.fromtimestamp(timestamp / 1000.0)
+    dt = datetime.now() - t
+
+    minutes = 5
+    seconds = minutes * 60
+
+    if dt.total_seconds() > seconds:
+        return False
+
+    return True
+
+
+def post_message(token, message, email, timestamp, hash_info):
+    status = post_message_helper(token=token,
+                                 message=message,
+                                 email=email,
+                                 timestamp=timestamp,
+                                 hash_info=hash_info)
 
     if success(status):
         send_live_data_by_email(email)
@@ -398,15 +454,22 @@ def post_message(token, message, email, hash_info):
     return get_status_translation(status)
 
 
-def post_message_helper(token, message, email, hash_info):
+def post_message_helper(token, message, email,
+                        timestamp, hash_info):
     if not correct_hashed_data(hash_info):
+        print("CORRUPT")
         return CORRUPT_DATA
+
+    if not valid_timestamp(timestamp):
+        return INVALID_TIMESTAMP
 
     if database_helper.get_email_from_token(token):
         if not user_exist(email):
             return NO_SUCH_USER
 
-        if database_helper.post_message(email, database_helper.get_email_from_token(token), message):
+        if database_helper.post_message(email,
+                                        database_helper.get_email_from_token(token),
+                                        message):
             return SUCCESS
 
     return NOT_SIGNED_IN
@@ -431,8 +494,11 @@ def get_status_translation(status):
         return {"success": False, "message": "Corrupt data."}
     elif status == INVALID_DATA:
         return {"success": False, "message": "Form data missing or incorrect type."}
+    elif status == INVALID_TIMESTAMP:
+        return {"success": False, "message": "Invalid timestamp"}
     else:
         raise ValueError
+
 
 def send_live_data_by_email(email):
     live_data = LiveData(email)
@@ -440,11 +506,11 @@ def send_live_data_by_email(email):
     if WEBSOCKETS.get(email, False):
         WEBSOCKETS[email].send(json.dumps(live_data.json()))
 
+
 def send_live_data_to_all():
-    for email,_ in database_helper.signed_in_users():
+    for email, _ in database_helper.signed_in_users():
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].send(json.dumps(LiveData(email).json()))
-
 
 
 if __name__ == "__main__":

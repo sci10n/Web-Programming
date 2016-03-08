@@ -1,12 +1,15 @@
 customSignIn = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
+    var timestamp = Date.now();
+
+    localStorage.setItem("user_email", form.username.value);
+
     var data = JSON.stringify({
         email: form.username.value,
         password: form.password.value,
+        timestamp: timestamp
     });
-
-    var hashed_data = CryptoJS.SHA256("/signin/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -14,7 +17,7 @@ customSignIn = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signin/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/signin/", data);
 };
 
 customSignInResponse = function (result) {
@@ -39,9 +42,8 @@ customSignUp = function (form) {
         gender: form.gender.value,
         password: form.password.value,
         repassword: form.repassword.value,
+        timestamp: Date.now()
     });
-
-    var hashed_data = CryptoJS.SHA256("/signup/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -49,7 +51,7 @@ customSignUp = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signup/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/signup/", data);
 };
 
 customSignUpResponse = function (result) {
@@ -65,11 +67,22 @@ customSignUpResponse = function (result) {
 customSignOut = function () {
     var xmlhttp = new XMLHttpRequest();
 
-    var data = JSON.stringify({
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        timestamp: timestamp,
         token: localStorage.getItem("user_token")
     });
 
-    var hashed_data = CryptoJS.SHA256("/signout/" + data);
+    var hashed_data = CryptoJS.SHA256("/signout/" + data_to_hash);
+
+    alert(hashed_data)
+
+    var data = JSON.stringify({
+        email: localStorage.getItem("user_email"),
+        hash: hashed_data,
+        timestamp: timestamp
+    });
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -77,7 +90,7 @@ customSignOut = function () {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/signout/" + hashed_data, data)
+    sendPOSTRequest(xmlhttp, "/signout/", data)
 };
 
 customSignOutResponse = function (result) {
@@ -89,13 +102,24 @@ customSignOutResponse = function (result) {
 customChangePassword = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        newpassword: form.newpassword.value,
+        oldpassword: form.oldpassword.value,
+        timestamp: timestamp,
+        token: localStorage.getItem("user_token")
+    });
+
+    var hashed_data = CryptoJS.SHA256("/changepassword/" + data_to_hash);
+
     var data = JSON.stringify({
         newpassword: form.newpassword.value,
         oldpassword: form.oldpassword.value,
-        token: localStorage.getItem("user_token"),
+        email: localStorage.getItem("user_email"),
+        hash: hashed_data,
+        timestamp: timestamp
     });
-
-    var hashed_data = CryptoJS.SHA256("/changepassword/" + data);
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -103,7 +127,7 @@ customChangePassword = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/changepassword/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/changepassword/", data);
 };
 
 customChangePasswordResponse = function (result) {
@@ -120,13 +144,27 @@ customChangePasswordResponse = function (result) {
 customPostMessage = function (form) {
     var xmlhttp = new XMLHttpRequest();
 
-    var data = JSON.stringify({
-        email: localStorage.getItem("post_email"),
+    var timestamp = Date.now();
+
+    var data_to_hash = JSON.stringify({
+        client_email: localStorage.getItem("user_email"),
         message: form.message.value,
-        token: localStorage.getItem("user_token"),
+        post_email: localStorage.getItem("post_email"),
+        timestamp: timestamp,
+        token: localStorage.getItem("user_token")
     });
 
-    var hashed_data = CryptoJS.SHA256("/postmessage/" + data);
+    var hashed_data = CryptoJS.SHA256("/postmessage/" + data_to_hash);
+
+    alert(hashed_data)
+
+    var data = JSON.stringify({
+        message: form.message.value,
+        post_email: localStorage.getItem("post_email"),
+        client_email: localStorage.getItem("user_email"),
+        hash: hashed_data,
+        timestamp: timestamp
+    });
 
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -134,7 +172,7 @@ customPostMessage = function (form) {
         }
     };
 
-    sendPOSTRequest(xmlhttp, "/postmessage/" + hashed_data, data);
+    sendPOSTRequest(xmlhttp, "/postmessage/", data);
 };
 
 customPostMessageResponse = function (result) {
@@ -156,7 +194,7 @@ showHomePanel = function () {
     };
 
     sendGETRequest(xmlhttp, '/getuserdatabytoken/' +
-        localStorage.getItem("user_token") + '/' + hashed_data);
+        localStorage.getItem("user_email") + '/' + hashed_data);
 };
 
 showHomePanelResponse = function (result) {
@@ -178,7 +216,7 @@ getInfo = function (email) {
     };
 
     sendGETRequest(xmlhttp, '/getuserdatabyemail/' +
-        localStorage.getItem("user_token") + '/' + email + '/' + hashed_data)
+        localStorage.getItem("user_email") + '/' + email + '/' + hashed_data)
 };
 
 getInfoResponse = function (result) {
@@ -204,7 +242,7 @@ getMessages = function () {
     };
 
     sendGETRequest(xmlhttp, '/getusermessagesbyemail/' +
-        localStorage.getItem("user_token") + '/' +
+        localStorage.getItem("user_email") + '/' +
         localStorage.getItem("post_email") + '/' + hashed_data);
 };
 
@@ -330,7 +368,7 @@ createGraph = function () {
     var ctx = document.getElementById("chart").getContext("2d");
 
     var data = {
-        labels: ["Posts", "SignedIn", "SignedUp"],
+        labels: ["Posts", "Signed In", "Signed Up"],
         datasets: [
             {
                 fillColor: "rgba(0,102,102,0.5)",
