@@ -385,7 +385,7 @@ createPostChart = function () {
 
     var options = {
         maintainAspectRatio: false,
-    responsive: false
+        responsive: false
     };
 
     post_chart = new Chart(ctx).Bar(data, options);
@@ -408,7 +408,7 @@ createUserChart = function () {
 
     var options = {
         maintainAspectRatio: false,
-    responsive: false
+        responsive: false
     };
 
     user_chart = new Chart(ctx).Bar(data, options);
