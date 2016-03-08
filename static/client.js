@@ -383,9 +383,9 @@ createPostChart = function () {
             }]
     };
 
-
     var options = {
-        responsive: true
+        maintainAspectRatio: false,
+    responsive: false
     };
 
     post_chart = new Chart(ctx).Bar(data, options);
@@ -406,9 +406,9 @@ createUserChart = function () {
             }]
     };
 
-
     var options = {
-        responsive: true
+        maintainAspectRatio: false,
+    responsive: false
     };
 
     user_chart = new Chart(ctx).Bar(data, options);
