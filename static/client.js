@@ -4,7 +4,6 @@ customSignIn = function (form) {
     var timestamp = Date.now();
 
 
-
     var data = JSON.stringify({
         email: form.username.value,
         password: form.password.value,
@@ -195,13 +194,12 @@ showHomePanel = function () {
 };
 
 showHomePanelResponse = function (result) {
-if (result.success)
-{
-    localStorage.setItem("post_email", result.data.email);
-    showPanel("home");
-    getInfo(result.data.email);
-    getMessages();
-}
+    if (result.success) {
+        localStorage.setItem("post_email", result.data.email);
+        showPanel("home");
+        getInfo(result.data.email);
+        getMessages();
+    }
 };
 
 getInfo = function (email) {
@@ -328,8 +326,8 @@ connectWebSocket = function () {
 
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        updateGraphs(data.messages,
-        data.user_messages,
+        updateCharts(data.messages,
+            data.user_messages,
             data.signedin,
             data.signedup);
     }
@@ -341,7 +339,7 @@ changeView = function (name) {
     } else if (name == "profile") {
         document.getElementById("content").innerHTML = document.getElementById("profileview").innerHTML;
         showHomePanel();
-        createGraphs();
+        createCharts();
     }
 };
 
@@ -362,42 +360,19 @@ showPanel = function (name) {
     }
 };
 
-var post_graph;
-var user_graph;
+var post_chart;
+var user_chart;
 
-createGraphs = function () {
-createPostGraph();
-createUserGraph();
+createCharts = function () {
+    createPostChart();
+    createUserChart();
 };
 
-createPostGraph = function() {
-var ctx = document.getElementById("post_graph").getContext("2d");
+createPostChart = function () {
+    var ctx = document.getElementById("post_chart").getContext("2d");
 
     var data = {
-                    labels: ["user posts", "total posts"],
-        datasets: [
-            {
-                fillColor: "rgba(0,102,102,0.5)",
-                strokeColor: "rgba(0,120,120,0.8)",
-                highlightFill: "rgba(0,51,51,0.75)",
-                highlightStroke: "rgba(0,60,60,1)",
-                data: [0, 0]
-            }]};
-
-
-
-    var options = {
-        responsive: true
-    };
-
-    post_graph = new Chart(ctx).Bar(data, options);
-    };
-
-createUserGraph = function() {
-var ctx = document.getElementById("user_graph").getContext("2d");
-
-    var data = {
-            labels: ["signed in", "signed up"],
+        labels: ["user posts", "total posts"],
         datasets: [
             {
                 fillColor: "rgba(0,102,102,0.5)",
@@ -413,25 +388,48 @@ var ctx = document.getElementById("user_graph").getContext("2d");
         responsive: true
     };
 
-    user_graph = new Chart(ctx).Bar(data, options);
-    };
-
-updateGraphs = function (total_messages, user_messages, signedin, signedup) {
-updatePostGraph(user_messages, total_messages);
-updateUserGraph(signedin, signedup);
+    post_chart = new Chart(ctx).Bar(data, options);
 };
 
-updatePostGraph = function(user_messages, total_messages){
-    post_graph.datasets[0].bars[0].value = user_messages;
-    post_graph.datasets[0].bars[1].value = total_messages;
-    post_graph.update();
-}
+createUserChart = function () {
+    var ctx = document.getElementById("user_chart").getContext("2d");
 
-updateUserGraph = function(signedin, signedup) {
-    user_graph.datasets[0].bars[0].value = signedin;
-    user_graph.datasets[0].bars[1].value = signedup;
-    user_graph.update();
-}
+    var data = {
+        labels: ["signed in", "signed up"],
+        datasets: [
+            {
+                fillColor: "rgba(0,102,102,0.5)",
+                strokeColor: "rgba(0,120,120,0.8)",
+                highlightFill: "rgba(0,51,51,0.75)",
+                highlightStroke: "rgba(0,60,60,1)",
+                data: [0, 0]
+            }]
+    };
+
+
+    var options = {
+        responsive: true
+    };
+
+    user_chart = new Chart(ctx).Bar(data, options);
+};
+
+updateCharts = function (total_messages, user_messages, signedin, signedup) {
+    updatePostChart(user_messages, total_messages);
+    updateUserChart(signedin, signedup);
+};
+
+updatePostChart = function (user_messages, total_messages) {
+    post_chart.datasets[0].bars[0].value = user_messages;
+    post_chart.datasets[0].bars[1].value = total_messages;
+    post_chart.update();
+};
+
+updateUserChart = function (signedin, signedup) {
+    user_chart.datasets[0].bars[0].value = signedin;
+    user_chart.datasets[0].bars[1].value = signedup;
+    user_chart.update();
+};
 
 init = function () {
     changeView("welcome");
