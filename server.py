@@ -294,7 +294,7 @@ def change_password(token, old_password, new_password,
         return get_status_translation(CORRUPT_DATA)
 
     if not valid_timestamp(timestamp):
-        return get_status_translation(timestamp)
+        return get_status_translation(INVALID_TIMESTAMP)
 
     if not valid_password(new_password):
         return get_status_translation(INVALID_DATA)
@@ -353,7 +353,6 @@ def get_user_data_by_email_helper(token, email, hash_info):
         return CORRUPT_DATA, None
 
     if user_exist(email):
-
         if user_exist(database_helper.get_email_from_token(token)):
             unprocessed_data = database_helper.get_user_data(email)
 
