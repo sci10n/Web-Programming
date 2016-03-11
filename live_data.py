@@ -21,9 +21,9 @@ class MaxMessages(object):
     def __init__(self):
         self.max_messages = max([len(database_helper.get_messages_by_email(user[0]))
                                  for user in database_helper.signed_up_users()])
-        self.emails = [user[0]
-                       for user in database_helper.signed_up_users()
-                       if len(database_helper.get_messages_by_email(user[0])) == self.max_messages]
+        self.email = [user[0]
+                      for user in database_helper.signed_up_users()
+                      if len(database_helper.get_messages_by_email(user[0])) == self.max_messages]
 
     def json(self):
         return {"max_messages": self.max_messages}

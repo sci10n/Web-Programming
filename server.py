@@ -68,7 +68,6 @@ def sign_in_token_POST(email, timestamp, client_hash):
         WEBSOCKETS[email] = ws
 
         send_all_data_to_email(email)
-        send_signed_in_to_all()
 
         while ws.receive():
             pass
@@ -190,7 +189,9 @@ def sign_in(email, password, timestamp):
     if success(status):
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].close()
+            del (WEBSOCKETS[email])
 
+        send_signed_in_to_all()
         return {"success": True, "message": "Successfully signed in.", "data": token}
 
     return get_status_translation(status)
@@ -460,7 +461,7 @@ def post_message(token, message, email, timestamp, hash_info):
     if success(status):
         send_user_messages_to_email(email)
         max_messages = MaxMessages()
-        if email in max_messages.emails and len(max_messages.emails) == 1:
+        if email in max_messages.email and len(max_messages.email) == 1:
             send_max_messages_to_all()
 
         return {"success": True, "message": "Message posted"}
