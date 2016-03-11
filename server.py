@@ -60,7 +60,6 @@ def sign_in_token_POST(email, timestamp, client_hash):
                                        "timestamp": int(timestamp)},
                                  hash=client_hash)) or \
             not valid_timestamp(int(timestamp)):
-        database_helper.sign_out(token)
         return ""
 
     if request.environ.get("wsgi.websocket"):
