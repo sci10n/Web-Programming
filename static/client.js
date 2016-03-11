@@ -21,7 +21,7 @@ customSignIn = function (form) {
 
 customSignInResponse = function (result) {
     if (result.success) {
-    localStorage.setItem("user_token", result.data);
+        localStorage.setItem("user_token", result.data);
         connectWebSocket();
         changeView("profile");
     } else {
@@ -314,17 +314,17 @@ sendGETRequest = function (xmlhttp, url) {
 };
 
 connectWebSocket = function () {
-var timestamp = Date.now();
+    var timestamp = Date.now();
 
-var data_to_hash = JSON.stringify({
-email: localStorage.getItem("user_email"),
-timestamp: timestamp
-})
+    var data_to_hash = JSON.stringify({
+        email: localStorage.getItem("user_email"),
+        timestamp: timestamp
+    })
 
     var hashed_data = CryptoJS.SHA256("/signin/" + localStorage.getItem("user_token") + "/" + data_to_hash);
 
     var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' +
-    localStorage.getItem("user_email") + "/" + timestamp + "/" + hashed_data);
+        localStorage.getItem("user_email") + "/" + timestamp + "/" + hashed_data);
 
     connection.onclose = function () {
         connection.close();
@@ -336,7 +336,7 @@ timestamp: timestamp
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
         updateCharts(data.user_messages,
-        data.max_messages,
+            data.max_messages,
             data.signedin,
             data.signedup);
     }
@@ -429,24 +429,24 @@ updateCharts = function (user_messages, max_messages, signedin, signedup) {
 };
 
 updatePostChart = function (user_messages, max_messages) {
-if (user_messages !== undefined) {
-post_chart.datasets[0].bars[0].value = user_messages;
-}
+    if (user_messages !== undefined) {
+        post_chart.datasets[0].bars[0].value = user_messages;
+    }
 
-if (max_messages !== undefined) {
-post_chart.datasets[0].bars[1].value = max_messages;
-}
+    if (max_messages !== undefined) {
+        post_chart.datasets[0].bars[1].value = max_messages;
+    }
     post_chart.update();
 };
 
 updateUserChart = function (signedin, signedup) {
-if (signedin !== undefined) {
-    user_chart.datasets[0].bars[0].value = signedin;
-}
+    if (signedin !== undefined) {
+        user_chart.datasets[0].bars[0].value = signedin;
+    }
 
-if (signedup !== undefined) {
-    user_chart.datasets[0].bars[1].value = signedup;
-}
+    if (signedup !== undefined) {
+        user_chart.datasets[0].bars[1].value = signedup;
+    }
     user_chart.update();
 };
 
