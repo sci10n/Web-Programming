@@ -72,8 +72,6 @@ def sign_out(token):
     result = execute_query("""DELETE FROM UserTokens WHERE token = ?""",
                            [token], commit=True)
 
-    print(token, result)
-
     if result == 1:
         return True
 
