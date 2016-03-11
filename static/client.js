@@ -3,7 +3,6 @@ customSignIn = function (form) {
 
     var timestamp = Date.now();
 
-
     var data = JSON.stringify({
         email: form.username.value,
         password: form.password.value,
@@ -22,8 +21,8 @@ customSignIn = function (form) {
 
 customSignInResponse = function (result) {
     if (result.success) {
+    localStorage.setItem("user_token", result.data);
         connectWebSocket();
-        localStorage.setItem("user_token", result.data);
         changeView("profile");
     } else {
         document.getElementById("signinform").username.setCustomValidity(result.message);
@@ -315,7 +314,17 @@ sendGETRequest = function (xmlhttp, url) {
 };
 
 connectWebSocket = function () {
-    var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' + localStorage.getItem("user_email"));
+var timestamp = Date.now();
+
+var data_to_hash = JSON.stringify({
+email: localStorage.getItem("user_email"),
+timestamp: timestamp
+})
+
+    var hashed_data = CryptoJS.SHA256("/signin/" + localStorage.getItem("user_token") + "/" + data_to_hash);
+
+    var connection = new WebSocket('ws://' + window.location.hostname + ':5000/signin/' +
+    localStorage.getItem("user_email") + "/" + timestamp + "/" + hashed_data);
 
     connection.onclose = function () {
         connection.close();
@@ -326,8 +335,8 @@ connectWebSocket = function () {
 
     connection.onmessage = function (event) {
         var data = JSON.parse(event.data);
-        updateCharts(data.max_messages,
-            data.user_messages,
+        updateCharts(data.user_messages,
+        data.max_messages,
             data.signedin,
             data.signedup);
     }
@@ -414,20 +423,30 @@ createUserChart = function () {
     user_chart = new Chart(ctx).Bar(data, options);
 };
 
-updateCharts = function (total_messages, user_messages, signedin, signedup) {
-    updatePostChart(user_messages, total_messages);
+updateCharts = function (user_messages, max_messages, signedin, signedup) {
+    updatePostChart(user_messages, max_messages);
     updateUserChart(signedin, signedup);
 };
 
-updatePostChart = function (user_messages, total_messages) {
-    post_chart.datasets[0].bars[0].value = user_messages;
-    post_chart.datasets[0].bars[1].value = total_messages;
+updatePostChart = function (user_messages, max_messages) {
+if (user_messages !== undefined) {
+post_chart.datasets[0].bars[0].value = user_messages;
+}
+
+if (max_messages !== undefined) {
+post_chart.datasets[0].bars[1].value = max_messages;
+}
     post_chart.update();
 };
 
 updateUserChart = function (signedin, signedup) {
+if (signedin !== undefined) {
     user_chart.datasets[0].bars[0].value = signedin;
+}
+
+if (signedup !== undefined) {
     user_chart.datasets[0].bars[1].value = signedup;
+}
     user_chart.update();
 };
 

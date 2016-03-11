@@ -9,7 +9,7 @@ from gevent.pywsgi import WSGIServer
 from geventwebsocket.handler import WebSocketHandler
 
 import database_helper
-from live_data import LiveData
+from live_data import MaxMessages, UserMessages, SignedUp, SignedIn
 from security import HashInfo, correct_hash
 
 app = Flask(__name__, static_url_path="")
@@ -51,20 +51,27 @@ def sign_in_POST():
     return json.dumps(sign_in(email, password, timestamp))
 
 
-@app.route('/signin/<email>')
-def sign_in_token_POST(email):
-    token = database_helper.get_token_from_email(email)
-    if request.environ.get("wsgi.websocket"):
-        if WEBSOCKETS.get(email, False):
-            WEBSOCKETS[email].close()
+@app.route('/signin/<email>/<timestamp>/<client_hash>')
+def sign_in_token_POST(email, timestamp, client_hash):
+    if not correct_hash(HashInfo(route="signin",
+                                 token=database_helper.get_token_from_email(email),
+                                 data={"email": email,
+                                       "timestamp": int(timestamp)},
+                                 hash=client_hash)) or \
+            not valid_timestamp(int(timestamp)):
+        return ""
 
+    if request.environ.get("wsgi.websocket"):
         ws = request.environ.get("wsgi.websocket")
+
         WEBSOCKETS[email] = ws
-        send_live_data_to_all()
+
+        send_all_data_to_email(email)
+        send_signed_in_to_all()
+
         while ws.receive():
             pass
 
-    database_helper.sign_out(token)
     return ""
 
 
@@ -179,6 +186,10 @@ def sign_in(email, password, timestamp):
                                    timestamp=timestamp)
 
     if success(status):
+        if WEBSOCKETS.get(email, False):
+            WEBSOCKETS[email].close()
+            database_helper.signout_invalid_tokens(email, token)
+
         return {"success": True, "message": "Successfully signed in.", "data": token}
 
     return get_status_translation(status)
@@ -233,7 +244,7 @@ def sign_up(email, password, repassword,
                             gender=gender, city=city, country=country)
 
     if success(status):
-        send_live_data_to_all()
+        send_signed_up_to_all()
         return {"success": True, "message": "Successfully created a new user."}
 
     return get_status_translation(status)
@@ -266,7 +277,7 @@ def sign_out(token, timestamp, hash_info):
     status = sign_out_helper(token, timestamp, hash_info)
 
     if success(status):
-        send_live_data_to_all()
+        send_signed_in_to_all()
         return {"success": True, "message": "Successfully signed out."}
 
     return get_status_translation(status)
@@ -446,7 +457,11 @@ def post_message(token, message, email, timestamp, hash_info):
                                  hash_info=hash_info)
 
     if success(status):
-        send_live_data_to_all()
+        send_user_messages_to_email(email)
+        max_messages = MaxMessages()
+        if email in max_messages.emails and len(max_messages.emails) == 1:
+            send_max_messages_to_all()
+
         return {"success": True, "message": "Message posted"}
 
     return get_status_translation(status)
@@ -497,10 +512,38 @@ def get_status_translation(status):
         raise ValueError
 
 
-def send_live_data_to_all():
+def send_user_messages_to_email(email):
+    if WEBSOCKETS.get(email, False):
+        WEBSOCKETS[email].send(json.dumps(UserMessages(email).json()))
+
+
+def send_max_messages_to_all():
+    send_data_to_all(MaxMessages().json())
+
+
+def send_signed_up_to_all():
+    send_data_to_all(SignedUp().json())
+
+
+def send_signed_in_to_all():
+    send_data_to_all(SignedIn().json())
+
+
+def send_all_data_to_email(email):
+    all_data = {}
+    all_data.update(UserMessages(email).json())
+    all_data.update(MaxMessages().json())
+    all_data.update(SignedIn().json())
+    all_data.update(SignedUp().json())
+
+    if WEBSOCKETS.get(email, False):
+        WEBSOCKETS[email].send(json.dumps(all_data))
+
+
+def send_data_to_all(data):
     for email, _ in database_helper.signed_in_users():
         if WEBSOCKETS.get(email, False):
-            WEBSOCKETS[email].send(json.dumps(LiveData(email).json()))
+            WEBSOCKETS[email].send(json.dumps(data))
 
 
 if __name__ == "__main__":
