@@ -56,16 +56,6 @@ def insert_token(email, token):
     return False
 
 
-def signout_invalid_tokens(email, token):
-    result = execute_query("""DELETE FROM UserTokens WHERE email = ? AND token != ?""",
-                           [email, token], commit=True)
-
-    if result:
-        return True
-
-    return False
-
-
 def sign_up(email, password, firstname,
             familyname, gender, city, country):
     result = execute_query("""INSERT INTO Users (email, password, firstname, familyname, gender, city, country)
@@ -81,6 +71,8 @@ def sign_up(email, password, firstname,
 def sign_out(token):
     result = execute_query("""DELETE FROM UserTokens WHERE token = ?""",
                            [token], commit=True)
+
+    print(token, result)
 
     if result == 1:
         return True

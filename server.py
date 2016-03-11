@@ -53,8 +53,9 @@ def sign_in_POST():
 
 @app.route('/signin/<email>/<timestamp>/<client_hash>')
 def sign_in_token_POST(email, timestamp, client_hash):
+    token = database_helper.get_token_from_email(email)
     if not correct_hash(HashInfo(route="signin",
-                                 token=database_helper.get_token_from_email(email),
+                                 token=token,
                                  data={"email": email,
                                        "timestamp": int(timestamp)},
                                  hash=client_hash)) or \
@@ -72,6 +73,7 @@ def sign_in_token_POST(email, timestamp, client_hash):
         while ws.receive():
             pass
 
+    database_helper.sign_out(token)
     return ""
 
 
@@ -188,7 +190,6 @@ def sign_in(email, password, timestamp):
     if success(status):
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].close()
-            database_helper.signout_invalid_tokens(email, token)
 
         return {"success": True, "message": "Successfully signed in.", "data": token}
 
