@@ -296,6 +296,8 @@ def sign_out_helper(token, timestamp, hash_info):
     if database_helper.sign_out(token):
         if WEBSOCKETS.get(email, False):
             WEBSOCKETS[email].close()
+            del (WEBSOCKETS[email])
+
         return SUCCESS
 
     return NOT_SIGNED_IN
